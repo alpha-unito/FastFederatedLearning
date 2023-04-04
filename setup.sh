@@ -1,3 +1,4 @@
+# Libraries download
 mkdir libs
 cd libs/
 
@@ -7,9 +8,16 @@ wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-de
 unzip libtorch-cxx11-abi-shared-with-deps-2.0.0+cpu.zip
 rm libtorch-cxx11-abi-shared-with-deps-2.0.0+cpu.zip
 
+# Environment variables setting
 export TORCH_HOME=$(pwd)/libtorch
-export Torch_DIR=${TORCH_HOME}/share/cmake
 export CEREAL_HOME=$(pwd)/cereal/include
 export FF_HOME=$(pwd)/fastflow
 
 cd ..
+
+# Code building
+mkdir build
+cd build/
+cmake ../
+make
+
