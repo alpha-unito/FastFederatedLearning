@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(FFL)
 
 # ---> ROBERT?
-#add_definitions(-std=c++20)
+add_definitions(-std=gnu++20)
 
 # Retrieving libraries paths
 list(APPEND CMAKE_PREFIX_PATH $ENV{CEREAL_HOME} $ENV{FF_HOME} $ENV{TORCH_HOME})

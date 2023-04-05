@@ -5,7 +5,6 @@ Fast Federated Learning (FFL) is a C/C++-based Federated Learning framework buil
 
 
 ## Getting started
----
 To setup the whole system and to compile the example just run:
 ```
 source setup.sh	
@@ -15,7 +14,6 @@ This script will automatically download all the required libraries, update the e
 
 
 ## Available examples
----
 Four different examples are currently available, obtained as the combination of two different communication topologies (master-worker, peer-to-peer) and two execution modalities (shared-memory, distributed). The executables have the following names:
 |        		| Shared-memory	| Distributed      |
 |:------------- |:--------------| :----------------|
@@ -70,7 +68,6 @@ where `-V` allow to visualise all the clients' output from the launching console
 
 
 ## Required libraries
----
 The whole project in wrote in C/C++ and to be compiled require a version of `CMake` > 3.0 and a C++20 compatible `C/C++ compiler`.
 
 Furthermore, the following software libraries are needed:
@@ -83,7 +80,6 @@ Furthermore, the following software libraries are needed:
 
 
 ## Publications
----
 This work has been published at the [2023 edition of the ACM Computing Frontiers conference](https://www.computingfrontiers.org/2023/).
 
 The paper's citation and link will be provided as soon as they became available.
@@ -91,5 +87,4 @@ The paper's citation and link will be provided as soon as they became available.
 
 
 ## Contacts
-
 This repository is maintained by [Gianluca Mittone](https://alpha.di.unito.it/gianluca-mittone/) (gianluca.mittone@unito.it).
