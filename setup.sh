@@ -1,6 +1,4 @@
 #!/bin/bash -f
-set -e
-
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Libraries download
@@ -27,7 +25,8 @@ if [ ! -d libs ]; then
     [ "$TORCHURL" == "" ] && echo "Could not determine the libtorch binary for this system. Please manualy install libtorch to $SCRIPT_DIR/libs/torch" && exit 1
 
     curl "$TORCHURL" -o torch.whl
-    unzip torch.whl "torch/*"
+    unzip torch.whl "torch/*" "libtorch/*" > /dev/null
+    mv libtorch torch  > /dev/null
     rm -f torch.whl
   fi
   
