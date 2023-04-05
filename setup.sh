@@ -6,6 +6,8 @@ cd $SCRIPT_DIR
 if [ ! -d libs ]; then
   mkdir libs
   cd libs/
+
+  # Download cereal library
   git clone -b v1.3.2 --single-branch --depth 1 https://github.com/USCiLab/cereal.git
   export CEREAL_HOME="$SCRIPT_DIR/libs/cereal/include"
 
@@ -26,12 +28,22 @@ if [ ! -d libs ]; then
 
     curl "$TORCHURL" -o torch.whl
     unzip torch.whl "torch/*" "libtorch/*" > /dev/null
-    mv libtorch torch  > /dev/null
+    mv libtorch torch  &> /dev/null
     rm -f torch.whl
   fi
-  
 
-  # Build the dff_run utility
+  # Download and compile openCV
+  if [ ! -d opencv ]; then
+    git clone -b 4.7.0 --depth 1 https://github.com/opencv/opencv.git opencv_src
+    mkdir -p opencv_src/build
+    cd opencv_src/build
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=OFF -DBUILD_DOCS=OFF -DCMAKE_INSTALL_PREFIX="$SCRIPT_DIR/libs/opencv" ../
+    make -j $(getconf _NPROCESSORS_ONLN)
+    make install
+    cd -
+  fi
+
+  # Download fastflow and build the dff_run utility
   git clone -b DistributedFF --single-branch --depth 1  https://github.com/fastflow/fastflow.git
   cd fastflow/ff/distributed/loader
   make
@@ -39,6 +51,7 @@ fi
 
 # Environment variables setting
 export TORCH_HOME="$SCRIPT_DIR/libs/torch"
+export OPENCV_HOME="$SCRIPT_DIR/libs/opencv"
 export CEREAL_HOME="$SCRIPT_DIR/libs/cereal/include"
 export FF_HOME="$SCRIPT_DIR/libs/fastflow"
 
