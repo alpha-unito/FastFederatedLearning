@@ -20,7 +20,7 @@ if [ ! -d libs ]; then
     ARCH=$(uname -m)
     OS=$(uname -s)
     [ "$OS" ==  "Darwin" ] && TORCHURL="https://files.pythonhosted.org/packages/4d/80/760f3edcf0179c3111fae496b97ee3fa9171116b4bccae6e073efe928e72/torch-2.0.0-cp39-none-macosx_11_0_$ARCH.whl"
-    [ "$OS" ==  "Linux" ]  && [ "$ARCH" ==  "x86_64" ]  && TORCHURL="https://files.pythonhosted.org/packages/5f/24/16e94ac3a470027a2f6cf56dbbe2ce1b2742fa0ac98844f039fad103e142/torch-2.0.0-cp39-cp39-manylinux1_x86_64.whl"
+    [ "$OS" ==  "Linux" ]  && [ "$ARCH" ==  "x86_64" ]  && TORCHURL="https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.0%2Bcpu.zip"
     [ "$OS" ==  "Linux" ]  && [ "$ARCH" ==  "aarch64" ] && TORCHURL="https://files.pythonhosted.org/packages/36/60/aa7bf18070611e7b019886d34516337ce6a2fe9da60745bc90b448642a10/torch-2.0.0-cp39-cp39-manylinux2014_aarch64.whl"
     [ "$OS" ==  "Linux" ]  && [ "$ARCH" ==  "riscv64" ] && TORCHURL="https://gitlab.di.unito.it/alpha/riscv/torch/-/package_files/17/download"
     
