@@ -265,7 +265,7 @@ int main(int argc, char*argv[]){
 
         if (argc >= 2) {
         if (strcmp(argv[1], "-h") == 0) {
-            std::cout << "Usage: kn-tree-mandown [forcecpu=0/1] [groups=3] [clients/group=1] [data_path]\n";
+            std::cout << "Usage: kn-tree-mandown [forcecpu=0/1] [groups=3] [clients/group=1] [model_path] [data_path]\n";
             exit(0);
         } else
             forcecpu = atoi(argv[1]);
@@ -275,7 +275,9 @@ int main(int argc, char*argv[]){
     if (argc >= 4)
         pL = atoi(argv[3]);
     if (argc >= 5)
-        infile = argv[4];
+        inmodel = argv[4];
+    if (argc >= 6)
+        infile = argv[5];
 
     torch::DeviceType device_type;
     if (torch::cuda::is_available() && !forcecpu) {
