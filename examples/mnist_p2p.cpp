@@ -20,15 +20,6 @@
 #include <dfl/federation.hpp>
 #include <dfl/fedavg.hpp>
 
-
-/* TODOs:
- [x] move dataset loading to init function
- [x] pass model as constructor argument
- [x] pass federation strategy as argument
- [ ] use serialized objects to exchanged parameters
- [ ] use distributed fastflow
-*/
-
 using namespace ff;
 
 // Define a new Module.
@@ -97,8 +88,8 @@ int main(int argc, char *argv[]) {
     ssize_t num_workers = 3;            // Number of workers
     int train_batchsize = 64;           // Train batch size
     int test_batchsize = 1000;          // Test batch size
-    int train_epochs = 2;               // Number of training epochs at workers in each round
-    int rounds = 3;                     // Number of training rounds
+    int train_epochs = 2;              // Number of training epochs at workers in each round
+    int rounds = 10;                     // Number of training rounds
     std::string data_path = "../../data";  // Patch to the MNIST data files (absolute or with respect to build directory)
     int forcecpu = 0;
 
