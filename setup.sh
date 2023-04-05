@@ -28,7 +28,7 @@ if [ ! -d libs ]; then
 
     curl "$TORCHURL" -o torch.whl
     unzip torch.whl "torch/*"
-    rm torch.whl
+    rm -f torch.whl
   fi
   
 
@@ -57,7 +57,7 @@ fi
 
 # Code building
 cd $SCRIPT_DIR
-[ -d build ] && rm -r build
+[ -d build ] && rm -rf build
 mkdir build
 cd build/
 cmake ../
