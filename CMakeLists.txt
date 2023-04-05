@@ -6,8 +6,6 @@ message("###########################################")
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(FFL)
 
-# ---> ROBERT?
-add_definitions(-std=gnu++20)
 enable_language(Fortran)
 
 # Retrieving libraries paths
@@ -18,23 +16,21 @@ foreach(path ${CMAKE_PREFIX_PATH})
 endforeach(path)
 
 # Searching for the FastFlow library
-find_path(FASTFLOW_DIR NAMES "ff/ff.hpp" PATH ENV FF_HOME)
+find_path(FASTFLOW_DIR NAMES "ff/ff.hpp")
 if(FASTFLOW_DIR STREQUAL "FASTFLOW_DIR-NOTFOUND")
   message(FATAL_ERROR "Could not find FastFlow library.")  
 endif()
 include_directories(${FASTFLOW_DIR})
 
 # Searching for the Cereal library
-find_path(CEREAL_DIR NAMES "cereal/cereal.hpp" PATH ENV CEREAL_HOME)
+find_path(CEREAL_DIR NAMES "cereal/cereal.hpp")
 if(CEREAL_DIR STREQUAL "CEREAL_DIR-NOTFOUND")
   message(FATAL_ERROR "Could not find Cereal library.")
 endif()
 include_directories(${CEREAL_DIR})
 
-find_package(Torch REQUIRED HINTS $ENV{TORCH_HOME})
-include_directories(${TORCH_INCLUDE_DIRS})
+find_package(Torch REQUIRED)
 find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Adding compiler definitions
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS} -pthread")

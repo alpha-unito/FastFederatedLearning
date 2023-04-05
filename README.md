@@ -70,7 +70,7 @@ where `-V` allow to visualise all the clients' output from the launching console
 
 
 ## Required libraries
-The whole project in wrote in C/C++ and to be compiled require a version of `CMake` > 3.0 and a C++20 compatible `C/C++ compiler`.
+The whole project in wrote in C/C++ and to be compiled require a version of `CMake` > 3.0 and a C++17 compatible `C/C++ compiler`.
 
 Furthermore, the following software libraries are needed:
 | Library       | Version       | Link  														   |
