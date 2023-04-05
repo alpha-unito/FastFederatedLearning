@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     int test_batchsize = 1000;          // Test batch size
     int train_epochs = 2;              // Number of training epochs at workers in each round
     int rounds = 10;                     // Number of training rounds
-    std::string data_path = "../../data";  // Patch to the MNIST data files (absolute or with respect to build directory)
+    std::string data_path = "../../../data";  // Patch to the MNIST data files (absolute or with respect to build directory)
     int forcecpu = 0;
 
     if (argc >= 2) {

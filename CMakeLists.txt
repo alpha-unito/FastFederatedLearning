@@ -6,10 +6,10 @@ message("###########################################")
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(FFL)
 
-enable_language(Fortran)
+# enable_language(Fortran)
 
 # Retrieving libraries paths
-list(APPEND CMAKE_PREFIX_PATH $ENV{CEREAL_HOME} $ENV{FF_HOME} $ENV{TORCH_HOME})
+list(APPEND CMAKE_PREFIX_PATH $ENV{CEREAL_HOME} $ENV{FF_HOME} $ENV{TORCH_HOME} $ENV{OPENCV_HOME})
 message("CMAKE found the following libraries paths:")
 foreach(path ${CMAKE_PREFIX_PATH})
   message("- Path: " ${path})
