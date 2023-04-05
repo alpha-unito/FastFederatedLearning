@@ -8,6 +8,7 @@ project(FFL)
 
 # ---> ROBERT?
 add_definitions(-std=gnu++20)
+enable_language(Fortran)
 
 # Retrieving libraries paths
 list(APPEND CMAKE_PREFIX_PATH $ENV{CEREAL_HOME} $ENV{FF_HOME} $ENV{TORCH_HOME})
@@ -30,13 +31,10 @@ if(CEREAL_DIR STREQUAL "CEREAL_DIR-NOTFOUND")
 endif()
 include_directories(${CEREAL_DIR})
 
-# Searching for the libtorch library
-find_path(TORCH_DIR NAMES "lib/libtorch.so" PATH ENV TORCH_HOME)
-if(TORCH_DIR STREQUAL "TORCH_DIR-NOTFOUND")
-  message(FATAL_ERROR "Could not find libtorch library.")
-endif()
-include_directories(${TORCH_DIR})
-find_package(Torch REQUIRED)
+find_package(Torch REQUIRED HINTS $ENV{TORCH_HOME})
+include_directories(${TORCH_INCLUDE_DIRS})
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Adding compiler definitions
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS} -pthread")

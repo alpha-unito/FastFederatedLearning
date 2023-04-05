@@ -1,0 +1,4 @@
+rank 0=epito01 slot=0
+rank 1=epito01 slot=0
+rank 2=epito02 slot=0
+rank 3=epito02 slot=0
