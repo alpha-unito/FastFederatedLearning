@@ -73,5 +73,5 @@ cd $SCRIPT_DIR
 mkdir build
 cd build/
 cmake ../
-make
+make -j $(getconf _NPROCESSORS_ONLN)
 cd examples/

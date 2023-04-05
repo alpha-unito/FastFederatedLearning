@@ -260,8 +260,8 @@ int main(int argc, char*argv[]){
 	size_t pL  = 1; // 1 client per group
         int forcecpu = 0;
 	
-	std::string inmodel="/beegfs/home/gmittone/Mandown/data/yolov5n.torchscript";
-	std::string infile="../data/Ranger_Roll_m.mp4";	
+	std::string inmodel="../../../data/yolov5n.torchscript";
+	std::string infile="../../../data/Ranger_Roll_m.mp4";	
 
         if (argc >= 2) {
         if (strcmp(argv[1], "-h") == 0) {

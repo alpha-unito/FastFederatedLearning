@@ -1,5 +1,5 @@
 #     --- Examples's CMake file ---
 
-add_subdirectory( mnist )
-add_subdirectory( mnist_p2p )
-add_subdirectory( mandown )
+add_subdirectory( masterworker )
+add_subdirectory( p2p )
+add_subdirectory( edgeinference )
