@@ -59,15 +59,14 @@ export FF_HOME="$SCRIPT_DIR/libs/fastflow"
 # MNIST dataset download
 cd $SCRIPT_DIR
 if [ ! -d data ]; then
-  wget https://datacloud.di.unito.it/index.php/s/GDZDNmreHAqjs9H/download
+  wget https://datacloud.di.unito.it/index.php/s/6qgZGtMMeqm3Ytq/download
   unzip download
   rm -rf download __MACOSX
-  #mkdir data
-  #cd data/
-  #[ ! -e train-images-idx3-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz | gunzip > train-images-idx3-ubyte
-  #[ ! -e train-labels-idx1-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz | gunzip > train-labels-idx1-ubyte
-  #[ ! -e t10k-images-idx3-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz | gunzip > t10k-images-idx3-ubyte
-  #[ ! -e t10k-labels-idx1-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz | gunzip > t10k-labels-idx1-ubyte
+  cd data/
+  [ ! -e train-images-idx3-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz | gunzip > train-images-idx3-ubyte
+  [ ! -e train-labels-idx1-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz | gunzip > train-labels-idx1-ubyte
+  [ ! -e t10k-images-idx3-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz | gunzip > t10k-images-idx3-ubyte
+  [ ! -e t10k-labels-idx1-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz | gunzip > t10k-labels-idx1-ubyte
 fi
 
 # Code building
