@@ -12,6 +12,21 @@ source setup.sh
 This script will automatically download all the required libraries, update the environment variables, build the `dff_run` utility, launch CMake and build all the available examples.
 
 
+## Reproducibility
+
+Starting from Ubuntu 22.04
+sudo apt-get update
+sudo apt-get install build-essential
+sudo apt-get install cmake
+sudo apt-get install libopencv-dev
+sudo apt-get install unzip
+
+git clone https://github.com/alpha-unito/FastFederatedLearning.git
+cd FastFederatedLearning
+source setup
+
+
+
 
 ## Available examples
 Six different examples are currently available, obtained as the combination of three different communication topologies (master-worker, peer-to-peer, tree-based) and two execution modalities (shared-memory, distributed). The executables have the following names:

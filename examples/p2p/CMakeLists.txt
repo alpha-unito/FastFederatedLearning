@@ -17,4 +17,7 @@ target_include_directories(p2p_dist PRIVATE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
 )
+configure_file(p2p_2.json p2p_2.json COPYONLY)
+configure_file(p2p_4.json p2p_4.json COPYONLY)
+configure_file(p2p_8.json p2p_8.json COPYONLY)
 set_property(TARGET p2p_dist PROPERTY CXX_STANDARD 17)

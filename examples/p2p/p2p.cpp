@@ -22,7 +22,6 @@
 
 using namespace ff;
 
-// Define a new Module.
 
 struct Net : torch::nn::Module {
     Net() {

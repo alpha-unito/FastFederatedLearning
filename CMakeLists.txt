@@ -1,19 +1,14 @@
 ### 	FFL - FAST FEDERATED LEARNING 	### 
 # 			--- Main CMake file ---
+
 message("###########################################")
 message("### 	FFL - FAST FEDERATED LEARNING 	###")
 message("###########################################")
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
-project(FFL)
-
-# enable_language(Fortran)
+project(FFL-FastFederatedLearning)
 
 # Retrieving libraries paths
 list(APPEND CMAKE_PREFIX_PATH $ENV{CEREAL_HOME} $ENV{FF_HOME} $ENV{TORCH_HOME})
-message("CMAKE found the following libraries paths:")
-foreach(path ${CMAKE_PREFIX_PATH})
-  message("- Path: " ${path})
-endforeach(path)
 
 # Searching for the FastFlow library
 find_path(FASTFLOW_DIR NAMES "ff/ff.hpp")
@@ -29,11 +24,9 @@ if(CEREAL_DIR STREQUAL "CEREAL_DIR-NOTFOUND")
 endif()
 include_directories(${CEREAL_DIR})
 
+# Searching for Torch and OpenCV
 find_package(Torch REQUIRED)
-find_package(OpenCV REQUIRED)
-#include_directories(${OpenCV_INCLUDE_DIRS})
-#LINK_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
-#message("${OpenCV_INCLUDE_DIRS}")
+find_package(OpenCV REQUIRED core highgui videoio)
 
 # Adding compiler definitions
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS} -pthread")
@@ -41,4 +34,4 @@ add_compile_definitions(DFF_EXCLUDE_MPI)
 add_compile_definitions(NO_DEFAULT_MAPPING)
 
 # The example folder contains the actual examples' code
-add_subdirectory( examples )
+add_subdirectory(examples)
