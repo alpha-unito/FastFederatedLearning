@@ -14,23 +14,34 @@ This script will automatically download all the required libraries, update the e
 
 ## Reproducibility
 
-Starting from Ubuntu 22.04
+Starting from a fresh Ubuntu 22.04 installation, the first step to reproduce the results reported in the paper is to update the available packages information and install the `build-essential`, `cmake`, `libopencv-dev`, and `unzip` packages:
+```
 sudo apt-get update
-sudo apt-get install build-essential
-sudo apt-get install cmake
-sudo apt-get install libopencv-dev
-sudo apt-get install unzip
-
+sudo apt-get install build-essential cmake libopencv-dev unzip
+```
+Then, clone the FFL repository locally and build the code as follows (the `setup.sh` script will take care of everything, as mentioned in the previous section):
+```
 git clone https://github.com/alpha-unito/FastFederatedLearning.git
 cd FastFederatedLearning
-source setup
+source setup.sh
+```
+Lasty, all that is needed to do to run the full set of experiments is to run the `reproduce.sh` script:
+```
+bash reproduce.sh
+```
+This script will take care of running in a replicate manner (5 times) all available examples (3) in all the available configuration (3), for a total of 5\*3\*3=45 runs. The mean execution time for each combination will be reported on the output, and logs will be saved for each experiment.
 
+### Power measurements
+
+The power measurements on the x86_64 and ARM platforma has been done trhough the [Powermon](https://github.com/Yamagi/powermon) utility. This software has to be started in parallel with the code execution on another shell, and then killed right after the desired computation is concluded.
+
+On the RISC-V platform, on the other hand, we used a National Instruments oscilloscope directly connected to the hardware board. This has been done due to the lack of other software-based solution and the high precision of the available machinery.
 
 
 
 ## Available examples
 Six different examples are currently available, obtained as the combination of three different communication topologies (master-worker, peer-to-peer, tree-based) and two execution modalities (shared-memory, distributed). The executables have the following names:
-|        		 | Shared-memory	 | Distributed            |
+| Topology   	 | Shared-memory	 | Distributed            |
 |:------------- |:--------------- | :--------------------- |
 | Master-worker | `masterworker`  |  `masterworker_dist`   |
 | Peer-to-peer  | `p2p`	          |  `p2p_dist`            | 
@@ -49,24 +60,26 @@ where `forcecpu` indicates if to force the CPU use (1) or to allow the GPU use (
 The distributed examples require an additional file to run correctly: a `json` distributed configuration file specifying on which host each FastFlow instance will run and which is his role (especially for the master-worker scenario). A generic distrubted configuration file for `masterworker_dist` looks like this:
 ```
 {
-    "groups" : [
-     {   
-        "endpoint" : "localhost:8000",
-        "name" : "Federator"
-     },
-     {   
-        "endpoint" : "128.0.0.1:8001",
-        "name" : "W0"
-     },
-     {   
-        "endpoint" : "host2:8022",
-        "name" : "W1"
-     },
-     {   
-        "endpoint" : "134.342.12.12:6004",
-        "name" : "W2"
-     }
-    ]
+   "groups" : [
+      {   
+         "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
+         "endpoint" : "localhost:8000",
+         "name" : "Federator"
+      },
+      {   
+         "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 20-23",
+         "endpoint" : "128.0.0.1:8001",
+         "name" : "W0"
+      },
+      {   
+         "endpoint" : "host2:8022",
+         "name" : "W1"
+      },
+      {   
+         "endpoint" : "134.342.12.12:6004",
+         "name" : "W2"
+      }
+   ]
 }
 ```
 where endpoint indicates the host and port where the FastFlow instance will be created, and name specifies the role of the node:
