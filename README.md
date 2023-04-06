@@ -15,23 +15,23 @@ This script will automatically download all the required libraries, update the e
 
 ## Available examples
 Six different examples are currently available, obtained as the combination of three different communication topologies (master-worker, peer-to-peer, tree-based) and two execution modalities (shared-memory, distributed). The executables have the following names:
-|        		 | Shared-memory	 | Distributed             |
-|:------------- |:--------------- | :---------------------- |
-| Master-worker | `mnist` 		    |  `mnist_dist`           |
-| Peer-to-peer  | `mnist_p2p`	    |  `mnist_p2p_dist`       | 
-| Tree-based    | `mandown`       |  `mandown_dist`  |
+|        		 | Shared-memory	 | Distributed            |
+|:------------- |:--------------- | :--------------------- |
+| Master-worker | `masterworker`  |  `masterworker_dist`   |
+| Peer-to-peer  | `p2p`	          |  `p2p_dist`            | 
+| Tree-based    | `edgeinference` |  `edgeinference_dist`  |
 
 ### Shared-memory examples
-The shared-memory examples (`mnist`, `mnist_p2p`, and `mandown`) are straght-forward to run. They can be executed with the following syntax:
+The shared-memory examples (`masterworker`, `p2p`, and `edgeinference`) are straght-forward to run. They can be executed with the following syntax:
 ```
-./mnist     [forcecpu=0/1] [rounds=10] [epochs/round=2]   [data_path="../../data"] [num_workers=3]
-./mnist_p2p [forcecpu=0/1] [rounds=10] [epochs/round=2]   [data_path="../../data"] [num_peers=3]
-./mandown   [forcecpu=0/1] [groups=3]  [clients/groups=1] [model_path] [data_path]
+./masterworker     [forcecpu=0/1] [rounds=10] [epochs/round=2]   [data_path="../../data"] [num_workers=3]
+./p2p [forcecpu=0/1] [rounds=10] [epochs/round=2]   [data_path="../../data"] [num_peers=3]
+./edgeinference   [forcecpu=0/1] [groups=3]  [clients/groups=1] [model_path] [data_path]
 ```
 where `forcecpu` indicates if to force the CPU use (1) or to allow the GPU use (0), `rounds` indicate the number of federated rounds to perform, `epochs/round` the number of training epoch to be run for each round, `data_path` is the path to the data files, `num_workers`/`num_peers`/`groups` is the number of instances to create, `client/groups` is the number of clients in each group, and `model_path` is the path of the `torchscript` model to be used.
 
 ### Distributed examples
-The distributed examples require an additional file to run correctly: a `json` distributed configuration file specifying on which host each FastFlow instance will run and which is his role (especially for the master-worker scenario). A generic distrubted configuration file for `mnist_dist` looks like this:
+The distributed examples require an additional file to run correctly: a `json` distributed configuration file specifying on which host each FastFlow instance will run and which is his role (especially for the master-worker scenario). A generic distrubted configuration file for `masterworker_dist` looks like this:
 ```
 {
     "groups" : [
@@ -63,9 +63,9 @@ where endpoint indicates the host and port where the FastFlow instance will be c
 
 Once the distributed configuration file is available, then running the examples is simalar to the shared-memory scenario, but additionally requires the `dff_run` utility:
 ```
-dff_run -V -p TCP -f [distributed_config_file] ./mnist_dist [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path="../../data"] [num_workers=3]
-dff_run -V -p TCP -f [distributed_config_file] ./mnist_p2p_dist [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path="../../data"] [num_peers=3]
-dff_run -V -p TCP -f [distributed_config_file] ./mandown [forcecpu=0/1] [groups=3] [clients/groups=1] [model_path] [data_path]
+dff_run -V -p TCP -f [distributed_config_file] ./masterworker_dist [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path="../../data"] [num_workers=3]
+dff_run -V -p TCP -f [distributed_config_file] ./p2p_dist [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path="../../data"] [num_peers=3]
+dff_run -V -p TCP -f [distributed_config_file] ./edgeinference [forcecpu=0/1] [groups=3] [clients/groups=1] [model_path] [data_path]
 ```
 where `-V` allow to visualise all the clients' output from the launching console, `-p TCP` forces the use of the TCP backend (MPI is also available), and `-f [distributed_config_file]` requires the distributed configuration file path.
 
@@ -75,11 +75,11 @@ where `-V` allow to visualise all the clients' output from the launching console
 The whole project in wrote in C/C++ and to be compiled require a version of `CMake` > 3.0 and a C++17 compatible `C/C++ compiler`.
 
 Furthermore, the following software libraries are needed:
-| Library       | Version       | Link  														   |
+| Library       | Version       | Link  														                  |
 |:------------- |:--------------| :----------------------------------------------------------------|
 | `FastFlow`    | DistributedFF | [GitHub](https://github.com/fastflow/fastflow/tree/DistributedFF)|
-| `Cereal`    	| 1.3.2		    | [GitHub](https://github.com/USCiLab/cereal/tree/v1.3.2)		   |
-| `libtorch` 	| 2.0.0         | [Webpage](https://pytorch.org/get-started/locally/) 			   |
+| `Cereal`    	 | 1.3.2		     | [GitHub](https://github.com/USCiLab/cereal/tree/v1.3.2)		      |
+| `libtorch` 	 | 2.0.0         | [Webpage](https://pytorch.org/get-started/locally/) 			      |
 
 
 
