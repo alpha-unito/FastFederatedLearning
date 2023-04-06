@@ -33,15 +33,15 @@ if [ ! -d libs ]; then
   fi
 
   # Download and compile openCV
-  if [ ! -d opencv ]; then
-    git clone -b 4.7.0 --depth 1 https://github.com/opencv/opencv.git opencv_src
-    mkdir -p opencv_src/build
-    cd opencv_src/build
-    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=OFF -DBUILD_DOCS=OFF -DCMAKE_INSTALL_PREFIX="$SCRIPT_DIR/libs/opencv" ../
-    make -j $(getconf _NPROCESSORS_ONLN)
-    make install
-    cd -
-  fi
+#  if [ ! -d opencv ]; then
+#    git clone -b 4.7.0 --depth 1 https://github.com/opencv/opencv.git opencv_src
+#    mkdir -p opencv_src/build
+#    cd opencv_src/build
+#    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=OFF -DBUILD_DOCS=OFF -DCMAKE_INSTALL_PREFIX="$SCRIPT_DIR/libs/opencv" ../
+#    make -j $(getconf _NPROCESSORS_ONLN)
+#    make install
+#    cd -
+#  fi
 
   # Download fastflow and build the dff_run utility
   git clone -b DistributedFF --single-branch --depth 1  https://github.com/fastflow/fastflow.git
@@ -51,18 +51,24 @@ fi
 
 # Environment variables setting
 export TORCH_HOME="$SCRIPT_DIR/libs/torch"
-export OPENCV_HOME="$SCRIPT_DIR/libs/opencv"
+#export OPENCV_HOME="$SCRIPT_DIR/libs/opencv"
 export CEREAL_HOME="$SCRIPT_DIR/libs/cereal/include"
 export FF_HOME="$SCRIPT_DIR/libs/fastflow"
 
 
 # MNIST dataset download
 cd $SCRIPT_DIR
-[ ! -e train-images-idx3-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz | gunzip > train-images-idx3-ubyte
-[ ! -e train-labels-idx1-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz | gunzip > train-labels-idx1-ubyte
-[ ! -e t10k-images-idx3-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz | gunzip > t10k-images-idx3-ubyte
-[ ! -e t10k-labels-idx1-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz | gunzip > t10k-labels-idx1-ubyte
-
+if [ ! -d data ]; then
+  wget https://datacloud.di.unito.it/index.php/s/GDZDNmreHAqjs9H/download
+  unzip download
+  rm -rf download __MACOSX
+  #mkdir data
+  #cd data/
+  #[ ! -e train-images-idx3-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz | gunzip > train-images-idx3-ubyte
+  #[ ! -e train-labels-idx1-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz | gunzip > train-labels-idx1-ubyte
+  #[ ! -e t10k-images-idx3-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz | gunzip > t10k-images-idx3-ubyte
+  #[ ! -e t10k-labels-idx1-ubyte ] && curl -o - http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz | gunzip > t10k-labels-idx1-ubyte
+fi
 
 # Code building
 cd $SCRIPT_DIR

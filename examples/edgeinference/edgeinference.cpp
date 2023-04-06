@@ -59,29 +59,6 @@
 
 using namespace ff;
 
-/*
-struct myTask_t {
-        myTask_t() {}
-        myTask_t(myTask_t* t){
-                str = std::string(t->str);
-                S.t = t->S.t;
-                S.f = t->S.f;
-        }
-
-        std::string str;
-        struct S_t {
-                long  t;
-                float f;
-        } S;
-
-        template<class Archive>
-        void serialize(Archive & archive) {
-                archive(str, S.t, S.f);
-        }
-
-};
-*/
-
 struct edgeMsg_t {
 	edgeMsg_t() {}
 	edgeMsg_t(edgeMsg_t* t){
@@ -105,24 +82,6 @@ struct edgeMsg_t {
 
 };
 
-
-// Read a video stream
-/*
-struct Client: ff_monode_t<myTask_t> {
-	Client(long ntasks):ntasks(ntasks) {}
-    myTask_t* svc(myTask_t*){
-        for(long i=0; i< ntasks; i++) {
-			myTask_t* task = new myTask_t;
-			task->str="Hello";
-			task->S.t = i;
-			task->S.f = i*1.0;
-            ff_send_out(task);
-		}        
-        return EOS;
-    }
-	const long ntasks;
-};
-*/
 struct EdgeNode: ff_monode_t<edgeMsg_t> {
 	EdgeNode(std::string workerName, torch::jit::script::Module model, std::string video_fname):workerName(workerName),model(model),video_fname(video_fname) {}
 	int svc_init() {

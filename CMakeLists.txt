@@ -9,7 +9,7 @@ project(FFL)
 # enable_language(Fortran)
 
 # Retrieving libraries paths
-list(APPEND CMAKE_PREFIX_PATH $ENV{CEREAL_HOME} $ENV{FF_HOME} $ENV{TORCH_HOME} $ENV{OPENCV_HOME})
+list(APPEND CMAKE_PREFIX_PATH $ENV{CEREAL_HOME} $ENV{FF_HOME} $ENV{TORCH_HOME})
 message("CMAKE found the following libraries paths:")
 foreach(path ${CMAKE_PREFIX_PATH})
   message("- Path: " ${path})
@@ -31,6 +31,9 @@ include_directories(${CEREAL_DIR})
 
 find_package(Torch REQUIRED)
 find_package(OpenCV REQUIRED)
+#include_directories(${OpenCV_INCLUDE_DIRS})
+#LINK_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
+#message("${OpenCV_INCLUDE_DIRS}")
 
 # Adding compiler definitions
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS} -pthread")
