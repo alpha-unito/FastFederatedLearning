@@ -82,7 +82,7 @@ The distributed examples require an additional file to run correctly: a `json` d
    ]
 }
 ```
-where endpoint indicates the host and port where the FastFlow instance will be created, and name specifies the role of the node:
+where preCmd indicates commands to be appended before the training command, endpoint indicates the host and port where the FastFlow instance will be created, and name specifies the role of the node:
 | Name       | Meaning               | Use case                  |
 |:-----------|:----------------------| :-------------------------|
 | `Federator`| Server 		          | master-worker             |
