@@ -1,6 +1,6 @@
 # FFL - Fast Federated Learning
 
-Fast Federated Learning (FFL) is a C/C++-based Federated Learning framework built on top of the parallel programming [FastFlow](http://calvados.di.unipi.it) framework. It exploits the [Cereal](https://uscilab.github.io/cereal/) library to efficiently serialise the updates sent over the network and the [libtorch](https://pytorch.org/cppdocs/installing.html) library to fully bypass the need for Python code.
+Fast Federated Learning (FFL) is a C/C++-based Federated Learning framework built on top of the parallel programming [FastFlow](http://calvados.di.unipi.it) framework. It exploits the [Cereal](https://uscilab.github.io/cereal/) library to efficiently serialise the updates sent over the network and the [libtorch](https://pytorch.org/cppdocs/installing.html) library to fully bypass the need for Python code. It has been successfully tested on x86_64, ARM and RISC-V platforms. FFL comes with scripts for automatically installing the framework and reproducing all the experiments reported in the original paper.
 
 
 
@@ -25,11 +25,12 @@ git clone https://github.com/alpha-unito/FastFederatedLearning.git
 cd FastFederatedLearning
 source setup.sh
 ```
-Lasty, all that is needed to do to run the full set of experiments is to run the `reproduce.sh` script:
+Lasty, all that is needed to run the full set of experiments is to run the `reproduce.sh` script:
 ```
 bash reproduce.sh
 ```
-This script will take care of running in a replicate manner (5 times) all available examples (3) in all the available configuration (3), for a total of 5\*3\*3=45 runs. The mean execution time for each combination will be reported on the output, and logs will be saved for each experiment.
+This script will take care of running in a replicate manner (5 times) all available examples (3) in all the available configurations (3), for a total of 5\*3\*3=45 runs. The mean execution time for each combination will be reported on the output, and logs will be saved for each experiment.
+Inside the reproduce script, the `MAX_ITER` variable can be set to change the replica factor of the experiments.
 
 ### Power measurements
 
@@ -108,7 +109,7 @@ Furthermore, the following software libraries are needed:
 | `FastFlow`    | DistributedFF | [GitHub](https://github.com/fastflow/fastflow/tree/DistributedFF)|
 | `Cereal`    	 | 1.3.2		     | [GitHub](https://github.com/USCiLab/cereal/tree/v1.3.2)		      |
 | `libtorch` 	 | 2.0.0         | [Webpage](https://pytorch.org/get-started/locally/) 			      |
-
+| `OpenCV` 	    | 4.6.0         | [Webpage](https://opencv.org) 			      |
 
 
 ## Publications
