@@ -1,3 +1,6 @@
+[![DOI](https://zenodo.org/badge/623524335.svg)](https://zenodo.org/badge/latestdoi/623524335)
+
+
 # FFL - Fast Federated Learning
 
 Fast Federated Learning (FFL) is a C/C++-based Federated Learning framework built on top of the parallel programming [FastFlow](http://calvados.di.unipi.it) framework. It exploits the [Cereal](https://uscilab.github.io/cereal/) library to efficiently serialise the updates sent over the network and the [libtorch](https://pytorch.org/cppdocs/installing.html) library to fully bypass the need for Python code. It has been successfully tested on x86_64, ARM and RISC-V platforms. FFL comes with scripts for automatically installing the framework and reproducing all the experiments reported in the original paper.
