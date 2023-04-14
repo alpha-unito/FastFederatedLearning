@@ -118,7 +118,7 @@ Furthermore, the following software libraries are needed:
 ## Publications
 This work has been published at the [2023 edition of the ACM Computing Frontiers conference](https://www.computingfrontiers.org/2023/).
 
-The paper's citation and link will be provided as soon as they became available.
+G. Mittone, N. Tonci, R. Birke, I. Colonnelli, D. Medić, A. Bartolini, R. Esposito, E. Parisi, F. Beneventi, M. Polato, M. Torquati, L. Benini, and M. Aldinucci, "Experimenting with Emerging RISC-V Systems for Decentralised Machine Learning", 20th ACM International Conference on Computing Frontiers, 2023. DOI: 10.1145/3587135.3592211
 
 
 
