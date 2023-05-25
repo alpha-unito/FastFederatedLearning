@@ -1,16 +1,24 @@
-# This is a sample Python script.
+import constants
+from json_generator import FFjson
+from configuration import Configuration
+from subprocess import call
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+CONFIG_PATH = "/mnt/shared/mittone/FastFederatedLearning/workspace/config.json"
+EXECUTABLE_PATH_MS = "/mnt/shared/mittone/FastFederatedLearning/build/examples/masterworker/masterworker_dist"
+DFF_RUN_PATH = "/mnt/shared/mittone/FastFederatedLearning/libs/fastflow/ff/distributed/loader/dff_run"
+DATA_PATH = "/mnt/shared/mittone/FastFederatedLearning/data"
+
+json = FFjson(endpoints=["device" + str(rank) + ":800" + str(rank) for rank in range(1, 21)],
+              topology=constants.MASTER_WORKER)
+
+config = Configuration(json_path=CONFIG_PATH, data_path=DATA_PATH, runner_path=DFF_RUN_PATH,
+                       executable_path=EXECUTABLE_PATH_MS)
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+def run_experiment(config: Configuration, json: FFjson):
+    json.generate_json_file(CONFIG_PATH)
+    call([config.get_runner_path(), "-V", "-p", "TCP", "-f ", config.get_json_path(), config.get_executable_path(), "1",
+          "1", "1", config.get_data_path(), str(json.get_clients_number())])
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+run_experiment(config, json)
