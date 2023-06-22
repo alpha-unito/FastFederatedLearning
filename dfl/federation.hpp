@@ -1,32 +1,42 @@
 #include <dfl/traintest.hpp>
 #include <ff/ff.hpp>
+#include <utils/utils.hpp>
 #include <iostream>
 
-template<typename Model, typename DataLoader, typename Aggregator>
-class Federator : public ff::ff_monode_t<Model> {
+template<typename StateDict, typename Model, typename Aggregator, typename DataLoader>
+class Federator : public ff::ff_monode_t<StateDict> {
+private:
+    StateDict *state_dict;
+    Model *model;
+    DataLoader test_data_loader;
+    Aggregator aggregator;
+    torch::Device device;
+    int num_workers_per_round;
+    int rounds;
+    int round{0};
+    int k{0};
 public:
     Federator() = delete;
 
-    Federator(Model *fed_model, Aggregator agg, int num_workers_per_round, int rounds, DataLoader &&test_data_loader,
+    Federator(StateDict *state_dict, Model* model, Aggregator agg, int num_workers_per_round, int rounds, DataLoader &&test_data_loader,
               torch::Device device = torch::kCPU) :
-            num_workers_per_round(num_workers_per_round),
-            rounds(rounds),
+            state_dict(state_dict),
+            model(model),
             test_data_loader(std::move(test_data_loader)),
             device(device),
-            model(fed_model),
-            aggregator(agg) {
-        model->to(device);
-    }
+            num_workers_per_round(num_workers_per_round),
+            rounds(rounds),
+            aggregator(agg) { model; }
 
-    Model *svc(Model *task) {
+    StateDict *svc(StateDict *task) {
         if (task >= this->GO_OUT)
             return this->GO_ON;
 
-        if (task == nullptr) {
+        if (task == nullptr)
             k = 0;
-        } else {
+        else {
             ++k;
-            aggregator.update_from(task);
+            aggregator.update_from(*task);
             delete task;
         }
 
@@ -36,6 +46,7 @@ public:
             k = 0;
 
             // Test the model
+            copy_to_model(model, state_dict);
             test(model, device, *test_data_loader);
 
             // Check if we are done
@@ -47,75 +58,59 @@ public:
 
         if (k == 0) {
             // Start a new round
-            //printf("Starting round %d\n", round);
+            printf("Starting round %d\n", round);
             aggregator.new_round();
             for (int i = 0; i < num_workers_per_round; ++i) {
-                Model *send_model = new Model();
-                //std::cout << "Model is " << sizeof(send_model) << std::endl;
-                copy_model(send_model, model);
-                this->ff_send_out_to(send_model, i);
+                StateDict *send_data = new StateDict(state_dict->parameters(), state_dict->buffers());
+                this->ff_send_out_to(send_data, i);
             }
         }
 
         return this->GO_ON;
     }
-
-private:
-    Model *model;
-    DataLoader test_data_loader;
-    Aggregator aggregator;
-    int num_workers_per_round;
-    torch::Device device;
-    int rounds;
-    int round{0};
-    int k{0};
 };
 
-template<typename Model, typename Optimizer, typename DataLoader>
-struct Worker : public ff::ff_monode_t<Model> {
+template<typename Net, typename StateDict, typename Optimizer, typename DataLoader>
+class Worker : public ff::ff_monode_t<StateDict> {
 public:
     Worker() = delete;
 
-    Worker(ssize_t id, Model *loc_model, int train_epochs, Optimizer &loc_optimizer, DataLoader &&train_data_loader,
+    Worker(ssize_t id, Net *net, StateDict *loc_model, int train_epochs, Optimizer &loc_optimizer,
+           DataLoader &&train_data_loader,
            torch::Device device = torch::kCPU) :
             id_(id),
             train_data_loader(std::move(train_data_loader)),
             train_epochs(train_epochs),
             device(device),
+            net(net),
             model(loc_model),
-            optimizer(std::move(loc_optimizer)) {
-        model->to(device);
-    }
+            optimizer(std::move(loc_optimizer)) { model; }
 
-    Model *svc(Model *task) {
-        // Copy model
-        copy_model(model, task);
+    StateDict *svc(StateDict *task) {
+        copy_to_model(net, task);
         delete task;
-        // Train model with local data
-        //std::cout << "Epochs: " << train_epochs << std::endl;
-        for (int i = 0; i < train_epochs; i++) {
-            train(++epoch, model, device, *train_data_loader, *optimizer, std::to_string(this->get_my_id()));
-        }
 
-        // Forward model
-        Model *send_model = new Model();
-        send_model->to(device);
-        copy_model(send_model, model);
-        return send_model;
+        std::cout << "Epochs: " << train_epochs << std::endl;
+        for (int i = 0; i < train_epochs; i++)
+            train(++epoch, net, device, *train_data_loader, *optimizer, std::to_string(this->get_my_id()));
+
+        StateDict *send_data = new StateDict(net->parameters(), net->buffers());
+        return send_data;
     }
 
 private:
     ssize_t id_;
-    Model *model;
+    StateDict *model;
+    Net *net;
     Optimizer optimizer;
-    int epoch{0};
-    int train_epochs;
     DataLoader train_data_loader;
     torch::Device device;
+    int epoch{0};
+    int train_epochs;
 };
 
 template<typename Model, typename Optimizer, typename DataLoaderTrain, typename Aggregator, typename DataLoaderTest>
-struct Peer : public ff::ff_monode_t<Model> {
+class Peer : public ff::ff_monode_t<Model> {
 public:
     Peer() = delete;
 
@@ -207,7 +202,7 @@ private:
 };
 
 template<typename Model>
-struct Distributor : public ff::ff_monode_t<Model> {
+class Distributor : public ff::ff_monode_t<Model> {
 public:
     Distributor() = delete;
 

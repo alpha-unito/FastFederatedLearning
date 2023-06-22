@@ -21,4 +21,8 @@ configure_file(masterworker_2.json masterworker_2.json COPYONLY)
 configure_file(masterworker_4.json masterworker_4.json COPYONLY)
 configure_file(masterworker_7.json masterworker_7.json COPYONLY)
 set_property(TARGET masterworker_dist PROPERTY CXX_STANDARD 17)
+if (MPI_FOUND)
+  target_link_libraries(masterworker_dist MPI::MPI_CXX)
+  target_include_directories(masterworker_dist  PRIVATE ${MPI_INCLUDE_PATH})
+endif()
 

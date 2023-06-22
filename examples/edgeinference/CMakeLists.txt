@@ -14,3 +14,8 @@ configure_file(edgeinference_2.json edgeinference_2.json COPYONLY)
 configure_file(edgeinference_4.json edgeinference_4.json COPYONLY)
 configure_file(edgeinference_7.json edgeinference_7.json COPYONLY)
 set_property(TARGET edgeinference_dist PROPERTY CXX_STANDARD 17)
+if (MPI_FOUND)
+  target_link_libraries(edgeinference_dist MPI::MPI_CXX)
+  target_include_directories(edgeinference_dist  PRIVATE ${MPI_INCLUDE_PATH})
+endif()
+

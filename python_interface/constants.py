@@ -2,7 +2,6 @@
 
 from typing import Final, List, Callable
 
-
 # Topology-related constants #
 MASTER_WORKER: Final[str] = "masterworker"
 """Centralized (master-worker) federation topology"""
@@ -12,7 +11,6 @@ PEER_TO_PEER: Final[str] = "peer_to_peer"
 
 TOPOLOGIES: Final[List[str]] = [MASTER_WORKER, PEER_TO_PEER]
 """List of allowed topologies"""
-
 
 # JSON-related constants #
 DEFAULT_ENDPOINT: Final[str] = "localhost"
@@ -34,4 +32,4 @@ FEDERATOR: Final[str] = "Federator"
 """Server name for the FastFlow json format"""
 
 WORKER: Callable[[int], str] = lambda rank: "W" + str(rank)
-"""Server name for the FastFlow json format"""
+"""Function for determining the workers names in the FastFlow json format"""

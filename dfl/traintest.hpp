@@ -1,5 +1,6 @@
 #include <torch/torch.h>
-#include<string.h>
+#include <string.h>
+
 
 namespace F = torch::nn::functional;
 
@@ -18,7 +19,11 @@ void train(size_t epoch, Net &model, torch::Device device, DataLoader &data_load
         // Reset gradients.
         optimizer.zero_grad();
         // Execute the model on the input data.
+        //std::vector <torch::jit::IValue> inputs;
+        //inputs.push_back(batch.data.to(device));
         torch::Tensor output = model->forward(batch.data.to(device));
+        //std::vector<torch::jit::IValue> outputs;
+        //outputs.push_back(output);
         // Compute a loss value to judge the prediction of our model.
         torch::Tensor loss = F::cross_entropy(output, batch.target.to(device));
         // Compute gradients of the loss w.r.t. the parameters of our model.
@@ -62,7 +67,10 @@ void test(Net &model, torch::Device device, DataLoader &data_loader, std::string
         dataset_size += batch.target.size(0);
         auto targets = batch.target.to(device);
         // Execute the model on the input data.
+        std::vector <torch::jit::IValue> inputs;
+        inputs.push_back(batch.data.to(device));
         torch::Tensor output = model->forward(batch.data.to(device));
+        //torch::Tensor output = model.forward(batch.data.to(device));
         // Accumulate loss over all data batches
         torch::Tensor loss_tensor = F::cross_entropy(output, targets,
                                                      F::CrossEntropyFuncOptions().reduction(torch::kMean));
@@ -76,32 +84,4 @@ void test(Net &model, torch::Device device, DataLoader &data_loader, std::string
     if (prefix.compare("0") == 0)
         std::printf("\n%s Test set: Average loss: %.4f | Accuracy: %.3f\n",
                     prefix.c_str(), test_loss, static_cast<double>(correct) / dataset_size);
-}
-
-
-template<typename Model>
-void copy_model(Model &dst, Model &src) {
-    torch::NoGradGuard guard;
-
-    // Iterate over the model parameters
-    assert(dst->parameters().size() == src->parameters().size());
-
-    for (int j = 0; j < dst->parameters().size(); j++) {
-        torch::Tensor p_dst = dst->parameters().at(j);
-        torch::Tensor p_src = src->parameters().at(j);
-
-        // Copy model parameters
-        p_dst.copy_(p_src);
-    }
-
-    // Iterate over the model parameters
-    assert(dst->buffers().size() == src->buffers().size());
-
-    for (int j = 0; j < dst->buffers().size(); j++) {
-        torch::Tensor p_dst = dst->buffers().at(j);
-        torch::Tensor p_src = src->buffers().at(j);
-
-        // Copy model parameters
-        p_dst.copy_(p_src);
-    }
 }

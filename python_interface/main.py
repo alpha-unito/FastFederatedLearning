@@ -1,24 +1,38 @@
 import constants
-from json_generator import FFjson
 from configuration import Configuration
-from subprocess import call
+from experiment import Experiment
+from model import Model
 
-CONFIG_PATH = "/mnt/shared/mittone/FastFederatedLearning/workspace/config.json"
-EXECUTABLE_PATH_MS = "/mnt/shared/mittone/FastFederatedLearning/build/examples/masterworker/masterworker_dist"
-DFF_RUN_PATH = "/mnt/shared/mittone/FastFederatedLearning/libs/fastflow/ff/distributed/loader/dff_run"
-DATA_PATH = "/mnt/shared/mittone/FastFederatedLearning/data"
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-json = FFjson(endpoints=["device" + str(rank) + ":800" + str(rank) for rank in range(1, 21)],
-              topology=constants.MASTER_WORKER)
+CONFIG_PATH = "/mnt/shared/gmittone/FastFederatedLearning/workspace/config.json"
+DFF_RUN_PATH = "/mnt/shared/gmittone/FastFederatedLearning/libs/fastflow/ff/distributed/loader/dff_run"
+DATA_PATH = "/mnt/shared/gmittone/FastFederatedLearning/data"
+
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(784, 64)
+        self.fc2 = nn.Linear(64, 32)
+        self.fc3 = nn.Linear(32, 10)
+
+    def forward(self, x):
+        x = x.view(-1, 28 * 28)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        output = F.log_softmax(self.fc3(x), dim=1)
+        return output
+
+
+compiled_model = Model(Net()).compile(torch.rand(1, 1, 28, 28))
 
 config = Configuration(json_path=CONFIG_PATH, data_path=DATA_PATH, runner_path=DFF_RUN_PATH,
-                       executable_path=EXECUTABLE_PATH_MS)
+                       endpoints=["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)],
+                       topology=constants.MASTER_WORKER)
+experiment = Experiment(config, model=compiled_model)
 
-
-def run_experiment(config: Configuration, json: FFjson):
-    json.generate_json_file(CONFIG_PATH)
-    call([config.get_runner_path(), "-V", "-p", "TCP", "-f ", config.get_json_path(), config.get_executable_path(), "1",
-          "1", "1", config.get_data_path(), str(json.get_clients_number())])
-
-
-run_experiment(config, json)
+experiment.kill()
+experiment.run_experiment()
