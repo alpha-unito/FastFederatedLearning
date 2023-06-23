@@ -30,8 +30,11 @@ class Net(nn.Module):
 compiled_model = Model(Net()).compile(torch.rand(1, 1, 28, 28))
 
 config = Configuration(json_path=CONFIG_PATH, data_path=DATA_PATH, runner_path=DFF_RUN_PATH,
-                       endpoints=["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)],
-                       topology=constants.MASTER_WORKER)
+                       endpoints=["small-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
+                                 + ["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 10)]
+                                 + ["medium-" + str(rank) + ":800" + str(rank) for rank in range(10, 21)]
+                                 + ["large-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)],
+                       topology=constants.PEER_TO_PEER)
 experiment = Experiment(config, model=compiled_model)
 
 experiment.kill()

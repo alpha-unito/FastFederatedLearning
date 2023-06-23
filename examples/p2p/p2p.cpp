@@ -12,85 +12,41 @@
  *  Each distributor j sends to all peers i where i != j 
  */
 
-#include <torch/torch.h>
-#include <ff/dff.hpp>
-#include <iostream>
 #include <mutex>
+#include <iostream>
 
-#include <dfl/federation.hpp>
-#include <dfl/fedavg.hpp>
+#include <ff/dff.hpp>
+#include <torch/torch.h>
+#include <torch/script.h>
+
+#include "dfl/federation.hpp"
+#include "dfl/fedavg.hpp"
+#include "utils/net.hpp"
+#include "utils/utils.hpp"
+#include "utils/serialize.hpp"
 
 using namespace ff;
-
-
-struct Net : torch::nn::Module {
-    Net() {
-        // Construct and register two Linear submodules.
-        fc1 = register_module("fc1", torch::nn::Linear(784, 64));
-        fc2 = register_module("fc2", torch::nn::Linear(64, 32));
-        fc3 = register_module("fc3", torch::nn::Linear(32, 10));
-    }
-
-    // Implement the Net's algorithm.
-    torch::Tensor forward(torch::Tensor x) {
-        // Use one of many tensor manipulation functions.
-        x = torch::relu(fc1->forward(x.reshape({x.size(0), 784})));
-        x = torch::relu(fc2->forward(x));
-        x = torch::log_softmax(fc3->forward(x), /*dim=*/1);
-        return x;
-    }
-
-    // Use one of many "standard library" modules.
-    torch::nn::Linear fc1{nullptr}, fc2{nullptr}, fc3{nullptr};
-};
 
 template<typename T>
 struct MiNodeAdapter : ff::ff_minode_t<T> {
     T *svc(T *in) { return in; }
 };
 
-
-// ignore for shared memory version
-template<typename T>
-void serializefreetask(T *o, Net *input) {
-    //ff::cout << "serializeFreeTask!" << std::endl;
-}
-
-// cereal based serialization do not work
-template<class Archive>
-void save(Archive &archive, Net const &m) {
-    std::ostringstream oss;
-    torch::serialize::OutputArchive o;
-    m.save(o);
-    o.save_to(oss);
-    archive(oss.str());
-}
-
-template<class Archive>
-void load(Archive &archive, Net &m) {
-    std::string r;
-    archive(r);
-    std::istringstream iss(r);
-    torch::serialize::InputArchive i;
-    i.load_from(iss);
-    m.load(i);
-}
-
 int main(int argc, char *argv[]) {
-    std::chrono::time_point <std::chrono::system_clock> start_time;
-    std::chrono::time_point <std::chrono::system_clock> end_time;
+    timer chrono = timer("Total execution time");
 
-    start_time = std::chrono::system_clock::now();
-    // required by the distributed version of FF
+#ifndef DISABLE_FF_DISTRIBUTED
     DFF_Init(argc, argv);
+#endif
 
-    ssize_t num_workers = 3;            // Number of workers
-    int train_batchsize = 64;           // Train batch size
-    int test_batchsize = 1000;          // Test batch size
-    int train_epochs = 2;              // Number of training epochs at workers in each round
-    int rounds = 10;                     // Number of training rounds
-    std::string data_path = "../../../data";  // Patch to the MNIST data files (absolute or with respect to build directory)
+    ssize_t num_workers = 3;                    // Number of workers
+    int train_batchsize = 64;                   // Train batch size
+    int test_batchsize = 1000;                  // Test batch size
+    int train_epochs = 2;                       // Number of training epochs at workers in each round
+    int rounds = 10;                            // Number of training rounds
+    std::string data_path = "../../../data";    // Patch to the MNIST data files (absolute or with respect to build directory)
     int forcecpu = 0;
+    const char *inmodel{"/mnt/shared/gmittone/FastFederatedLearning/workspace/model.pt"};
 
     if (argc >= 2) {
         if (strcmp(argv[1], "-h") == 0) {
@@ -120,7 +76,6 @@ int main(int argc, char *argv[]) {
     }
     torch::Device device(device_type);
     //torch::set_num_threads(nt);
-
     torch::cuda::manual_seed_all(42);
 
     // Get train and test data
@@ -138,29 +93,29 @@ int main(int argc, char *argv[]) {
     // Create set of workers each with its own model, optimizer and training set
     std::vector < ff::ff_node * > left;
     std::vector < ff::ff_node * > right;
+
     for (ssize_t i = 0; i < num_workers; ++i) {
-        auto loc_net = new Net;
-        auto optimizer = std::make_shared<torch::optim::SGD>(loc_net->parameters(),
+        Net <torch::jit::Module> *local_net = new Net<torch::jit::Module>(inmodel);
+        auto optimizer = std::make_shared<torch::optim::SGD>(local_net->parameters(),
                                                              torch::optim::SGDOptions(0.01).momentum(0.5));
 
-        auto fed_net = new Net;
-        FedAvg aggregator(fed_net);
+        Net <torch::jit::Module> *fed_net = new Net<torch::jit::Module>(inmodel);
+        FedAvg <StateDict> aggregator(*fed_net->state_dict());
 
-        ff::ff_node *peer = new ff::ff_comb(new MiNodeAdapter<Net>(), new Peer(i, loc_net, train_epochs, optimizer,
-                                                                               torch::data::make_data_loader(
-                                                                                       train_dataset,
-                                                                                       torch::data::samplers::DistributedRandomSampler(
-                                                                                               train_dataset.size().value(),
-                                                                                               8, i % 8, false),
-                                                                                       train_batchsize),
-                                                                               fed_net, aggregator, num_workers, rounds,
-                                                                               torch::data::make_data_loader(
-                                                                                       test_dataset, test_batchsize),
-                                                                               device), true, true);
+        ff::ff_node *peer = new ff::ff_comb(new MiNodeAdapter<StateDict>(),
+                                            new Peer(i, local_net, local_net->state_dict(), train_epochs, optimizer,
+                                                     torch::data::make_data_loader(
+                                                             train_dataset,
+                                                             torch::data::samplers::DistributedRandomSampler(
+                                                                     train_dataset.size().value(), 8, i % 8, false),
+                                                             train_batchsize),
+                                                     fed_net, fed_net->state_dict(), aggregator, num_workers, rounds,
+                                                     torch::data::make_data_loader( test_dataset, test_batchsize),
+                                                     device), true, true);
         left.push_back(peer);
 
-        ff::ff_node *distributor = new ff::ff_comb(new MiNodeAdapter<Net>(),
-                                                   new Distributor<Net>(i, num_workers, device), true, true);
+        ff::ff_node *distributor = new ff::ff_comb(new MiNodeAdapter<StateDict>(),
+                                                   new Distributor<StateDict>(i, num_workers, device), true, true);
         right.push_back(distributor);
 
         a2a.createGroup("W" + std::to_string(i)) << peer << distributor;
@@ -168,21 +123,16 @@ int main(int argc, char *argv[]) {
     a2a.add_firstset(left); // M1,M3,M5 all left
     a2a.add_secondset(right); // M2,M4,M6 All right
 
-    // required for the distributed-version
-#ifndef DISABLE_FF_DISTRIBUTED
+#ifdef DISABLE_FF_DISTRIBUTED
+    a2a.wrap_around();
+    a2a.run_and_wait_end();
+#else
     ff::ff_pipeline pipe;
     pipe.add_stage(&a2a);
     pipe.wrap_around();  // for distributed memory version
     pipe.run_and_wait_end(); // for distributed memory version
-#else
-    a2a.wrap_around();
-    a2a.run_and_wait_end();
 #endif
 
-    end_time = std::chrono::system_clock::now();
-
-    std::cout << "Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
-              << "ms" << std::endl;
-
+    chrono.stop();
     return 0;
 }

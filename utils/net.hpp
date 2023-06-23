@@ -31,7 +31,7 @@ private:
     Module module;
     StateDict *state_dict_data;
 
-public:
+public: // TODO: add clone method/constructor
     Net() : module(NULL) {} //TODO: rendere possibile la creazione di una rete anche non da torchscript
 
     Net(const char *model_path) : state_dict_data(nullptr) {

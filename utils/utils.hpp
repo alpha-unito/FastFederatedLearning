@@ -33,19 +33,19 @@ void copy_model(Model &dst, Model &src) {
     torch::NoGradGuard guard;
 
     // Iterate over the model parameters
-    assert(dst->parameters().size() == src->parameters().size());
-    for (int j = 0; j < dst->parameters().size(); j++) {
-        torch::Tensor p_dst = dst->parameters().at(j);
-        torch::Tensor p_src = src->parameters().at(j);
+    assert(dst.parameters().size() == src.parameters().size());
+    for (int j = 0; j < dst.parameters().size(); j++) {
+        torch::Tensor p_dst = dst.parameters().at(j);
+        torch::Tensor p_src = src.parameters().at(j);
 
         // Copy model parameters
         p_dst.copy_(p_src);
     }
     // Iterate over the model parameters
-    assert(dst->buffers().size() == src->buffers().size());
-    for (int j = 0; j < dst->buffers().size(); j++) {
-        torch::Tensor p_dst = dst->buffers().at(j);
-        torch::Tensor p_src = src->buffers().at(j);
+    assert(dst.buffers().size() == src.buffers().size());
+    for (int j = 0; j < dst.buffers().size(); j++) {
+        torch::Tensor p_dst = dst.buffers().at(j);
+        torch::Tensor p_src = src.buffers().at(j);
 
         // Copy model parameters
         p_dst.copy_(p_src);
@@ -56,17 +56,17 @@ template<typename Model, typename Params>
 void copy_to_model(Model &dst, Params &src) {
     torch::NoGradGuard guard;
 
-    //assert(dst->parameters().size() == src->parameters().size());
-    for (int j = 0; j < dst->parameters().size(); j++) {
-        torch::Tensor p_dst = dst->parameters().at(j);
-        torch::Tensor p_src = src->parameters().at(j);
+    assert(dst.parameters().size() == src.parameters().size());
+    for (int j = 0; j < dst.parameters().size(); j++) {
+        torch::Tensor p_dst = dst.parameters().at(j);
+        torch::Tensor p_src = src.parameters().at(j);
         p_dst.copy_(p_src);
     }
 
-    //assert(dst->buffers().size() == src->buffers().size());
-    for (int j = 0; j < dst->buffers().size(); j++) {
-        torch::Tensor p_dst = dst->buffers().at(j);
-        torch::Tensor p_src = src->buffers().at(j);
+    assert(dst.buffers().size() == src.buffers().size());
+    for (int j = 0; j < dst.buffers().size(); j++) {
+        torch::Tensor p_dst = dst.buffers().at(j);
+        torch::Tensor p_src = src.buffers().at(j);
         p_dst.copy_(p_src);
     }
 }
