@@ -61,10 +61,8 @@ public:
             // Start a new round
             printf("Starting round %d\n", round);
             aggregator.new_round();
-            for (int i = 0; i < num_workers_per_round; ++i) {
-                StateDict *send_data = new StateDict(state_dict->parameters(), state_dict->buffers());
-                this->ff_send_out_to(send_data, i);
-            }
+            for (int i = 0; i < num_workers_per_round; ++i)
+                this->ff_send_out_to(state_dict, i);
         }
 
         return this->GO_ON;
@@ -104,8 +102,7 @@ public:
         for (int i = 0; i < train_epochs; i++)
             train(++epoch, net, device, *train_data_loader, *optimizer, std::to_string(this->get_my_id()));
 
-        StateDict *send_data = new StateDict(net->parameters(), net->buffers());
-        return send_data;
+        return net->state_dict();
     }
 };
 
@@ -188,9 +185,7 @@ public:
             aggregator.update_from(*loc_model);
             ++k;
 
-            // Send out the local model to the distributor
-            StateDict *send_data = new StateDict(loc_net->parameters(), loc_net->buffers());
-            this->ff_send_out_to(send_data, id_);
+            this->ff_send_out_to(loc_net->state_dict(), id_);
         }
 
         return this->GO_ON;
@@ -206,18 +201,16 @@ private:
 public:
     Distributor() = delete;
 
-    Distributor(ssize_t id, ssize_t num_peers, torch::Device device = torch::kCPU) : device_(device) {
-        id_ = id;
-        num_peers_ = num_peers;
-    }
+    Distributor(ssize_t id, ssize_t num_peers, torch::Device device = torch::kCPU) :
+            device_(device),
+            id_(id),
+            num_peers_(num_peers) {}
 
     Model *svc(Model *task) {
         // Forward model to all other peers
         for (ssize_t i = 0; i < num_peers_; i++) {
-            if (i != id_) { // Skip ourself
-                Model *send_data = new Model(task->parameters(), task->buffers());
-                this->ff_send_out_to(send_data, i);
-            }
+            if (i != id_)// Skip ourself
+                this->ff_send_out_to(task, i);
         }
         delete task;
         return this->GO_ON;

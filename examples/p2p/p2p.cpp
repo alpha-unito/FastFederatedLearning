@@ -32,6 +32,9 @@ struct MiNodeAdapter : ff::ff_minode_t<T> {
     T *svc(T *in) { return in; }
 };
 
+template<typename T>
+void serializefreetask(T *o, StateDict *input) {}
+
 int main(int argc, char *argv[]) {
     timer chrono = timer("Total execution time");
 
@@ -110,7 +113,7 @@ int main(int argc, char *argv[]) {
                                                                      train_dataset.size().value(), 8, i % 8, false),
                                                              train_batchsize),
                                                      fed_net, fed_net->state_dict(), aggregator, num_workers, rounds,
-                                                     torch::data::make_data_loader( test_dataset, test_batchsize),
+                                                     torch::data::make_data_loader(test_dataset, test_batchsize),
                                                      device), true, true);
         left.push_back(peer);
 

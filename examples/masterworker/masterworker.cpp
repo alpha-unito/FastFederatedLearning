@@ -40,6 +40,9 @@ struct MiNodeAdapter : ff_minode_t<T> {
     T *svc(T *in) { return in; }
 };
 
+template<typename T>
+void serializefreetask(T *o, StateDict *input) {}
+
 int main(int argc, char *argv[]) {
     timer chrono = timer("Total execution time");
 
@@ -48,7 +51,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     int num_workers{3};                // Number of workers
-    int train_batchsize{64};           // Train batch size
+    int train_batchsize{128};           // Train batch size
     int test_batchsize{1000};          // Test batch size
     int train_epochs{2};               // Number of training epochs at workers in each round
     int rounds{10};                     // Number of training rounds
