@@ -96,7 +96,9 @@ public:
 
     StateDict *svc(StateDict *task) {
         copy_model(*net->state_dict(), *task);
+#ifndef DISABLE_FF_DISTRIBUTED
         delete task;
+#endif
 
         std::cout << "Epochs: " << train_epochs << std::endl;
         for (int i = 0; i < train_epochs; i++)

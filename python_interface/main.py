@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import torchvision
+
 CONFIG_PATH = "/mnt/shared/gmittone/FastFederatedLearning/workspace/config.json"
 DFF_RUN_PATH = "/mnt/shared/gmittone/FastFederatedLearning/libs/fastflow/ff/distributed/loader/dff_run"
 DATA_PATH = "/mnt/shared/gmittone/FastFederatedLearning/data"
@@ -27,14 +29,18 @@ class Net(nn.Module):
         return output
 
 
-compiled_model = Model(Net()).compile(torch.rand(1, 1, 28, 28))
+model = torchvision.models.resnet18(num_classes=10)
+model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+
+compiled_model = Model(model).compile(torch.rand(128, 1, 28, 28))
 
 config = Configuration(json_path=CONFIG_PATH, data_path=DATA_PATH, runner_path=DFF_RUN_PATH,
                        endpoints=["small-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
-                                 + ["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 10)]
-                                 + ["medium-" + str(rank) + ":800" + str(rank) for rank in range(10, 21)]
-                                 + ["large-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)],
-                       topology=constants.PEER_TO_PEER)
+                                 #+ ["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 10)]
+                                 #+ ["medium-" + str(rank) + ":800" + str(rank) for rank in range(10, 21)]
+                                 #+ ["large-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
+                       ,
+                       topology=constants.MASTER_WORKER)
 experiment = Experiment(config, model=compiled_model)
 
 experiment.kill()
