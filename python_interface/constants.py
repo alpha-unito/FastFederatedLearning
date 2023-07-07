@@ -33,3 +33,10 @@ FEDERATOR: Final[str] = "Federator"
 
 WORKER: Callable[[int], str] = lambda rank: "W" + str(rank)
 """Function for determining the workers names in the FastFlow json format"""
+
+# Backend constants #
+TCP: Final[str] = "TCP"
+"""TCP communication backend"""
+
+MPI: Final[str] = "MPI"
+"""MPI communication backend"""

@@ -3,14 +3,12 @@
 #include <utils/utils.hpp>
 #include <iostream>
 
-template<typename StateDict, typename Model, typename Aggregator, typename DataLoader>
+template<typename StateDict, typename Model, typename Aggregator>
 class Federator : public ff::ff_monode_t<StateDict> {
 private:
     StateDict *state_dict;
     Model *model;
-    DataLoader test_data_loader;
     Aggregator aggregator;
-    torch::Device device;
     int num_workers_per_round;
     int rounds;
     int round{0};
@@ -18,13 +16,9 @@ private:
 public:
     Federator() = delete;
 
-    Federator(StateDict *state_dict, Model *model, Aggregator agg, int num_workers_per_round, int rounds,
-              DataLoader &&test_data_loader,
-              torch::Device device = torch::kCPU) :
+    Federator(StateDict *state_dict, Model *model, Aggregator agg, int num_workers_per_round, int rounds) :
             state_dict(state_dict),
             model(model),
-            test_data_loader(std::move(test_data_loader)),
-            device(device),
             num_workers_per_round(num_workers_per_round),
             rounds(rounds),
             aggregator(agg) { model; }
@@ -46,10 +40,6 @@ public:
             ++round;
             k = 0;
 
-            // Test the model
-            copy_model(*model->state_dict(), *state_dict);
-            test(model, device, *test_data_loader);
-
             // Check if we are done
             if (round >= rounds) {
                 printf("Finished training!\n");
@@ -69,14 +59,15 @@ public:
     }
 };
 
-template<typename Net, typename StateDict, typename Optimizer, typename DataLoader>
+template<typename Net, typename StateDict, typename Optimizer, typename TrainDataLoader, typename TestDataLoader>
 class Worker : public ff::ff_monode_t<StateDict> {
 private:
     ssize_t id_;
     StateDict *model;
     Net *net;
     Optimizer optimizer;
-    DataLoader train_data_loader;
+    TrainDataLoader train_data_loader;
+    TestDataLoader test_data_loader;
     torch::Device device;
     int epoch{0};
     int train_epochs;
@@ -84,10 +75,10 @@ public:
     Worker() = delete;
 
     Worker(ssize_t id, Net *net, StateDict *loc_model, int train_epochs, Optimizer &loc_optimizer,
-           DataLoader &&train_data_loader,
-           torch::Device device = torch::kCPU) :
+           TrainDataLoader &&train_data_loader, TestDataLoader &&test_data_loader, torch::Device device = torch::kCPU) :
             id_(id),
             train_data_loader(std::move(train_data_loader)),
+            test_data_loader(std::move(test_data_loader)),
             train_epochs(train_epochs),
             device(device),
             net(net),
@@ -100,9 +91,14 @@ public:
         delete task;
 #endif
 
-        std::cout << "Epochs: " << train_epochs << std::endl;
-        for (int i = 0; i < train_epochs; i++)
-            train(++epoch, net, device, *train_data_loader, *optimizer, std::to_string(this->get_my_id()));
+        std::cout << "[" << id_ << "] Starting local testing..." << std::endl;
+        test(net, device, *test_data_loader, std::to_string(id_));
+
+        std::cout << "[" << id_ << "] Starting local training..." << std::endl;
+        for (int i = 0; i < train_epochs; i++) {
+            std::cout << "[" << id_ << "] Epoch " << i << "..." << std::endl;
+            train(++epoch, net, device, *train_data_loader, *optimizer, std::to_string(id_));
+        }
 
         return net->state_dict();
     }

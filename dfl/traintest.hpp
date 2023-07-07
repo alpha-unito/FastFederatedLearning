@@ -6,7 +6,7 @@ namespace F = torch::nn::functional;
 
 template<typename DataLoader, typename Net>
 void train(size_t epoch, Net &model, torch::Device device, DataLoader &data_loader, torch::optim::Optimizer &optimizer,
-           std::string prefix = "", int log_interval = 100) {
+           std::string prefix = "0", int log_interval = 512) {
     // Train model
     model->train();
 
@@ -38,8 +38,8 @@ void train(size_t epoch, Net &model, torch::Device device, DataLoader &data_load
         optimizer.step();
         // Print progress
         if (batch_idx++ % log_interval == 0) {
-            //std::printf("\rTrain %s Epoch: %ld %5llu Loss: %.4f",
-            //prefix.c_str(), epoch, batch_idx * batch.data.size(0), loss.item<float>());
+            std::printf("\r[%s] Batch %5lu Loss: %.4f\n", prefix.c_str(), batch_idx * batch.data.size(0),
+                        loss.item<float>());
         }
     }
     float train_accuracy = static_cast<float>(correct) / num_samples;
@@ -81,7 +81,6 @@ void test(Net &model, torch::Device device, DataLoader &data_loader, std::string
     }
     // Print stats
     test_loss = test_loss / dataset_size;
-    if (prefix.compare("0") == 0)
-        std::printf("\n%s Test set: Average loss: %.4f | Accuracy: %.3f\n",
-                    prefix.c_str(), test_loss, static_cast<double>(correct) / dataset_size);
+    std::printf("\n[%s] Test set: Average loss: %.4f | Accuracy: %.3f\n", prefix.c_str(), test_loss,
+                static_cast<double>(correct) / dataset_size);
 }
