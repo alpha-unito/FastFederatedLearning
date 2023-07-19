@@ -9,9 +9,6 @@ MASTER_WORKER: Final[str] = "masterworker"
 PEER_TO_PEER: Final[str] = "peer_to_peer"
 """Peer to peer federation topology"""
 
-TOPOLOGIES: Final[List[str]] = [MASTER_WORKER, PEER_TO_PEER]
-"""List of allowed topologies"""
-
 # JSON-related constants #
 DEFAULT_ENDPOINT: Final[str] = "localhost"
 """Endpoint placeholder"""

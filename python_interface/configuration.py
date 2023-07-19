@@ -1,11 +1,14 @@
 """General configuration of the framework."""
 import constants
-from custom_types import PathLike
+import os
+import logging
+
+from custom_types import PathLike, Backend, Topology
 from json_generator import FFjson
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union, Optional, Any, get_args
+from custom_exceptions import MutuallyExclusiveArgumentsException
 
-from constants import TCP
-
+# TODO: make paths more flexible
 FFL_DIR = "/mnt/shared/gmittone/FastFederatedLearning/"
 EXECUTABLE_PATH_MS = FFL_DIR + "build/examples/masterworker/masterworker_dist"
 EXECUTABLE_PATH_P2P = FFL_DIR + "build/examples/p2p/p2p_dist"
@@ -13,27 +16,28 @@ EXECUTABLE_PATH_P2P = FFL_DIR + "build/examples/p2p/p2p_dist"
 
 class Configuration(dict):
 
-    def __init__(self, json_path: PathLike, data_path: PathLike, runner_path: PathLike, config_file_path: PathLike,
-                 torchscript_path: PathLike, topology: str = constants.MASTER_WORKER,
+    def __init__(self, json_path: PathLike, data_path: PathLike, runner_path: PathLike,
+                 torchscript_path: PathLike, topology: Topology = constants.MASTER_WORKER,
                  endpoints: Union[int, List[str], List[Dict[str, str]]] = 2,
-                 commands: Optional[Union[str, List[str]]] = None, backend: str = TCP, force_cpu: bool = True,
-                 rounds: int = 1, epochs: int = 1):
+                 commands: Optional[Union[str, List[str]]] = None, backend: Backend = constants.TCP,
+                 force_cpu: bool = True, rounds: int = 1, epochs: int = 1):
         super().__init__()
+
+        # TODO: Add logging
 
         self.json: FFjson = FFjson(topology=topology, endpoints=endpoints, commands=commands)
 
-        self["json_path"]: PathLike = json_path
-        self["data_path"]: PathLike = data_path
-        self["runner_path"]: PathLike = runner_path
-        self["config_file_path"]: PathLike = config_file_path
-        self[
-            "executable_path"]: PathLike = EXECUTABLE_PATH_MS if self.json.topology == constants.MASTER_WORKER else EXECUTABLE_PATH_P2P
-        self["torchscript_path"]: PathLike = torchscript_path
-        self["backend"]: str = backend  # TODO: controllare che backend sia TCP o MPI
-        self["force_cpu"]: int = 1 if force_cpu else 0
-        self["rounds"]: int = rounds  # TODO check >=1
-        self["epochs"]: int = epochs  # TODO check >=1
+        self.set_json_path(json_path=json_path)
+        self.set_data_path(data_path=data_path)
+        self.set_runner_path(runner_path=runner_path)
+        self.set_executable_path(topology=topology)
+        self.set_torchscript_path(torchscript_path=torchscript_path)
+        self.set_backend(backend=backend)
+        self.set_force_cpu(force_cpu=force_cpu)
+        self.set_rounds(rounds=rounds)
+        self.set_epochs(epochs=epochs)
 
+    # Getters
     def get_json_path(self) -> PathLike:
         return self["json_path"]
 
@@ -42,9 +46,6 @@ class Configuration(dict):
 
     def get_runner_path(self) -> PathLike:
         return self["runner_path"]
-
-    def get_config_file_path(self) -> PathLike:
-        return self["config_file_path"]
 
     def get_executable_path(self) -> PathLike:
         return self["executable_path"]
@@ -67,32 +68,71 @@ class Configuration(dict):
     def get_json(self) -> FFjson:
         return self.json
 
+    # Setters
     def set_json_path(self, json_path: PathLike):
-        self["json_path"] = json_path
+        check_and_create_path(json_path, "json_path")
+        self["json_path"]: PathLike = json_path
 
     def set_data_path(self, data_path: PathLike):
-        self["data_path"] = data_path
+        check_and_create_path(data_path, "data_path")
+        self["data_path"]: PathLike = data_path
 
     def set_runner_path(self, runner_path: PathLike):
-        self["runner_path"] = runner_path
+        check_and_create_path(runner_path, "runner_path")
+        self["runner_path"]: PathLike = runner_path
 
-    def set_config_file_path(self, config_file_path: PathLike):
-        self["config_file_path"] = config_file_path
-
-    def set_executable_path(self, executable_path: PathLike):
-        self["executable_path"] = executable_path
+    def set_executable_path(self, executable_path: Optional[PathLike] = None, topology: Optional[Topology] = None):
+        check_mutually_exclusive_args(executable_path, topology)
+        if executable_path is not None:
+            check_and_create_path(executable_path, "executable_path")
+            self["executable_path"]: PathLike = executable_path
+        else:  # TODO: Make this choice extendible in the future with user-defined topologies
+            check_var_in_literal(topology, Topology)
+            self["executable_path"]: PathLike = \
+                EXECUTABLE_PATH_MS if topology == constants.MASTER_WORKER else EXECUTABLE_PATH_P2P
 
     def set_torchscript_path(self, torchscript_path: PathLike):
-        self["torchscript_path"] = torchscript_path
+        check_and_create_path(torchscript_path, "torchscript_path")
+        self["torchscript_path"]: PathLike = torchscript_path
 
-    def set_backend(self, backend: str):
-        self["backend"] = backend
+    def set_backend(self, backend: Backend):
+        check_var_in_literal(backend, Backend)
+        self["backend"]: Backend = backend
 
     def set_force_cpu(self, force_cpu: bool):
-        self["force_cpu"] = force_cpu
+        self["force_cpu"]: bool = 1 if force_cpu else 0
 
     def set_rounds(self, rounds: int):
-        self["rounds"] = rounds
+        check_positive_int(rounds)
+        self["rounds"]: int = rounds
 
     def set_epochs(self, epochs: int):
-        self["epochs"] = epochs
+        check_positive_int(epochs)
+        self["epochs"]: int = epochs
+
+
+# Utility
+def check_and_create_path(path: PathLike, target: str = ""):
+    dirname = os.path.dirname(path)
+    logging.debug("Attempting to create " + target + " at path: " + str(path) + "...")
+    if os.path.exists(dirname):
+        logging.debug("Path: " + str(path) + " already existing.")
+    else:
+        logging.debug("Path: " + str(path) + " not found...")
+        os.makedirs(dirname, exist_ok=True)
+        logging.debug("Created path: " + str(path) + ".")
+
+
+def check_mutually_exclusive_args(arg_1: Any, arg_2: Any):
+    if (arg_1 is not None and arg_2 is not None) or (arg_1 is None and arg_2 is None):
+        raise MutuallyExclusiveArgumentsException("Mutually exclusive arguments.")
+
+
+def check_var_in_literal(var: Any, literal: Any):
+    if var not in get_args(literal):
+        raise ValueError("Value " + str(var) + " not in " + str(literal))
+
+
+def check_positive_int(var: int, threshold: int = 0):
+    if var <= threshold:
+        raise ValueError("Value " + str(var) + " must be greater than" + str(threshold))

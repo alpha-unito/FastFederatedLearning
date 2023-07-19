@@ -3,7 +3,7 @@ This class handles the creation of the json configuration file necessary for bui
 """
 
 from typing import List, Dict, Union, Optional
-from custom_types import PathLike
+from custom_types import PathLike, Topology
 import constants
 import json
 
@@ -32,14 +32,11 @@ class FFjson(dict):
         :type commands: Optional[Union[str, List[str]]]
     """
 
-    def __init__(self, topology: str = constants.MASTER_WORKER,
+    def __init__(self, topology: Topology = constants.MASTER_WORKER,
                  endpoints: Union[int, List[str], List[Dict[str, str]]] = 2,
                  commands: Optional[Union[str, List[str]]] = None):
         """Creation of a FFjson JSON object containing all the necessary information for a FastFlow execution."""
         super().__init__()
-
-        if topology not in constants.TOPOLOGIES:
-            raise ValueError("Topology type not supported: " + str(topology))
 
         self.topology: str = topology
         self[constants.GROUPS]: List[Dict]

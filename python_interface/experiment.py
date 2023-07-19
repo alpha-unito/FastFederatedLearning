@@ -15,7 +15,7 @@ class Experiment:
 
     def run_experiment(self):
         torch.jit.save(self.model, self.configuration.get_torchscript_path())
-        self.json.generate_json_file(self.configuration.get_config_file_path())
+        self.json.generate_json_file(self.configuration.get_json_path())
         call([self.configuration.get_runner_path(),
               "-V",
               "-p",
