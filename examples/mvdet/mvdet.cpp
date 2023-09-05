@@ -121,7 +121,7 @@ struct CameraNode : ff_monode_t<int, Frame> {
             Frame * fr = new Frame(out_node, lid, *i);
 
             // Warp perspective 
-            cv::Mat img_feature_mat =  tensorToImg(img_feature);
+            cv::Mat img_feature_mat = tensorToFeat(img_feature);
             cv::warpPerspective(img_feature_mat, fr->frame, perspective_matrix, {120, 360});
     
             // Send it out
@@ -169,6 +169,7 @@ struct AggregatorNode : ff_minode_t<Frame> {
             // TODO: Process frame
 
             // Convert Map to Tensor and populate List of Tensors
+            // expected tensor shape: torch.Size([1, 512, 120, 360])
 
             // ...
 
