@@ -17,12 +17,31 @@ torch::Tensor imgToTensor(const cv::Mat& frame) {
   return imgTensor;
 }
 
+// Convert eth image features from MAt to Tensor
+torch::Tensor featToTensor(const cv::Mat& feat) {
+  // processing cv image to adapt to the model input
+
+  torch::Tensor imgTensor =
+      torch::from_blob(feat.data, {feat.rows, feat.cols, 512}, torch::kByte);
+  imgTensor = imgTensor.permute({2, 0, 1});
+  imgTensor = imgTensor.toType(torch::kFloat);
+  imgTensor = imgTensor.unsqueeze(
+      0);  // add batch dimension, from [3,640,640] to [1,3,640,640]
+
+// [1, 512, 120, 360]
+
+  return imgTensor;
+}
+
 // Convert a video frame form tensor to opencv mat format
 // TODO: check this
-cv::Mat tensorToImg(const torch::Tensor &tensor) {
+cv::Mat tensorToFeat(const torch::Tensor &tensor) {
+  std::vector< int > sizes;
 
-    return cv::Mat(tensor.size(0),
-                   tensor.size(1),
+  for(auto size : tensor.sizes())
+    sizes.push_back(size);
+
+  return cv::Mat(sizes,
                    CV_32F,
                    tensor.data_ptr<float>());
 }
