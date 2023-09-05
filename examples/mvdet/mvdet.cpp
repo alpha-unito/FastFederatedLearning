@@ -95,6 +95,7 @@ struct CameraNode : ff_monode_t<int, Frame> {
         cap.read(frame);
         if (frame.empty()) {
             std::cout << camera_id << " finished video.\n";
+            delete i;
             return EOS;
         } else {
             // Process frame using base model
@@ -256,6 +257,8 @@ int main(int argc, char *argv[]) {
         nsqu = atoi(argv[2]);
     if (argc >= 4)
         image_path = argv[3];
+    if (argc >= 5)
+        data_path = argv[4];
     if (groupName.compare(sinkName) == 0)
         std::cout << "Inferencing on " << ncam << " cameras." << std::endl;
 
