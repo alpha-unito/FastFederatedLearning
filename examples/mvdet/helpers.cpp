@@ -17,7 +17,7 @@ torch::Tensor imgToTensor(const cv::Mat& frame) {
   return imgTensor;
 }
 
-// Convert eth image features from MAt to Tensor
+// Convert the image features from MAt to Tensor
 torch::Tensor featToTensor(const cv::Mat& feat) {
   // processing cv image to adapt to the model input
 
@@ -35,15 +35,25 @@ torch::Tensor featToTensor(const cv::Mat& feat) {
 
 // Convert a video frame form tensor to opencv mat format
 // TODO: check this
-cv::Mat tensorToFeat(const torch::Tensor &tensor) {
-  std::vector< int > sizes;
+// cv::Mat tensorToFeat(const torch::Tensor &tensor) {
+//   std::vector< int > sizes;
 
-  for(auto size : tensor.sizes())
-    sizes.push_back(size);
+//   for(auto size : tensor.sizes())
+//     sizes.push_back(size);
 
-  return cv::Mat(sizes,
-                   CV_32F,
-                   tensor.data_ptr<float>());
+//   return cv::Mat(sizes,
+//                    CV_32F,
+//                    tensor.data_ptr<float>());
+// }
+
+cv::Mat tensorToFeat(torch::Tensor& tensor) {
+    tensor = tensor.squeeze().detach();
+    tensor = tensor.permute({1, 2, 0}).contiguous();
+    // tensor = tensor.mul(255).clamp(0, 255).to(torch::kU8);
+    tensor = tensor.to(torch::kCPU);
+    int64_t height = tensor.size(0);
+    int64_t width = tensor.size(1);
+    return cv::Mat(cv::Size(width, height), CV_32F, tensor.data_ptr<float>());
 }
 
 cv::Mat tensorToProjectionMat(const torch::Tensor &tensor) {
