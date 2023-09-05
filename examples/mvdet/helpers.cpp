@@ -27,6 +27,14 @@ cv::Mat tensorToImg(const torch::Tensor &tensor) {
                    tensor.data_ptr<float>());
 }
 
+cv::Mat tensorToProjectionMat(const torch::Tensor &tensor) {
+
+    return cv::Mat(tensor.size(0),
+                   tensor.size(1),
+                   CV_32F,
+                   tensor.data_ptr<float>());
+}
+
 void show_results(const cv::Mat& frame) {
   cv::imshow("", frame);
   cv::waitKey(1);
