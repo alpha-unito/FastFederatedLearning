@@ -5,7 +5,7 @@ torch::Tensor imgToTensor(const cv::Mat& frame) {
   // processing cv image to adapt to the model input
   cv::Mat img;
   // cv::resize(frame, img, cv::Size(MOD_W, MOD_H));
-  cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
+  cv::cvtColor(frame, img, cv::COLOR_BGR2RGB);
   torch::Tensor imgTensor =
       torch::from_blob(img.data, {img.rows, img.cols, 3}, torch::kByte);
   imgTensor = imgTensor.permute({2, 0, 1});
