@@ -18,7 +18,9 @@ target_include_directories(mvdet_dist PRIVATE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
 )
-configure_file(mvdet_7.json mvdet_7.json COPYONLY)
+configure_file(mvdet_7_1.json mvdet_7_1.json COPYONLY)
+configure_file(mvdet_1_1.json mvdet_1_1.json COPYONLY)
+configure_file(mvdet_3_2.json mvdet_3_2.json COPYONLY)
 set_property(TARGET mvdet_dist PROPERTY CXX_STANDARD 17)
 if (MPI_FOUND)
   target_link_libraries(mvdet_dist MPI::MPI_CXX)

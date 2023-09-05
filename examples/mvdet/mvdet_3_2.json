@@ -1,0 +1,44 @@
+{
+   "groups" : [
+      {   
+         "endpoint" : "localhost:8000",
+         "name" : "C1"
+      },
+      {   
+         "endpoint" : "localhost:8001",
+         "name" : "C2"
+      },
+      {   
+         "endpoint" : "localhost:8002",
+         "name" : "C3"
+      },
+      {   
+         "endpoint" : "localhost:8003",
+         "name" : "C4"
+      },
+      {   
+         "endpoint" : "localhost:8004",
+         "name" : "C5"
+      },
+      {   
+         "endpoint" : "localhost:8005",
+         "name" : "C6"
+      },
+      {   
+         "endpoint" : "localhost:8007",
+         "name" : "A1"
+      },
+      {
+         "endpoint" : "localhost:8007",
+         "name" : "A2"
+      },
+      {   
+         "endpoint" : "localhost:8008",
+         "name" : "S0"
+      },
+      {   
+         "endpoint" : "localhost:8009",
+         "name" : "S8"
+      }
+   ]
+}
