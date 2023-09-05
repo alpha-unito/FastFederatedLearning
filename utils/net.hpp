@@ -33,7 +33,16 @@ private:
 
 public: // TODO: add clone method/constructor
     Net() : module(NULL) {} //TODO: rendere possibile la creazione di una rete anche non da torchscript
-
+    Net(std::string& model_path) : state_dict_data(nullptr) {
+        try {
+            module = torch::jit::load(model_path.c_str());
+        } catch (const c10::Error &e) {
+            std::cerr << "Error loading the model\n" << std::endl
+                      << "Details:" << std::endl
+                      << e.what() << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
     Net(const char *model_path) : state_dict_data(nullptr) {
         try {
             module = torch::jit::load(model_path);
