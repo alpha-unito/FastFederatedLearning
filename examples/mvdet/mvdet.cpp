@@ -235,9 +235,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 #endif
-
-    std::string image_path = "/home/gmalenza/Workspace/Phd/mytest2/Image_subsets_test";
-
     // then this could be std::vector
     std::size_t ncam{7};
     std::size_t nsqu{1};
@@ -271,7 +268,6 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < nsqu; i++) {
         std::string rank = std::to_string(i + 1);
         secondset.push_back(new AggregatorNode("A" + rank, base_models_path + "map_classifier.pt", ncam));
-        AggregatorNode A1("A1", , ncam_x_nsqu);
     }
 
     std::vector < CameraNode * > firstset;
