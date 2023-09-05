@@ -1,14 +1,14 @@
 #include <ff/dff.hpp>
 #include <torch/torch.h>
-
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 
 #include "utils/net.hpp"
-
 #include "helpers.hpp"
 
+
 using namespace ff;
+
 
 struct Frame {
     Frame() {}
@@ -24,9 +24,7 @@ struct Frame {
     }
 
     template<class Archive>
-    void serialize(Archive &archive) {
-        archive(id_square, id_camera, id_frame);
-    }
+    void serialize(Archive &archive) { archive(id_square, id_camera, id_frame); }
 
     cv::Mat frame;
     int id_square;
@@ -55,27 +53,25 @@ struct Source : ff_node_t<int> {
 
 struct CameraNode : ff_monode_t<int, Frame> {
     CameraNode(std::string camera_id, std::string vp, std::string pm, std::string bm,
-            std::string cm, int lid, int out_node) : camera_id{camera_id}, video_path{vp},
-                    projection_matrix_path{pm}, base_model_path{bm}, image_classifier_path{cm},
-            out_node{out_node}, lid{lid} {}
+               std::string cm, int lid, int out_node) : camera_id{camera_id}, video_path{vp},
+                                                        projection_matrix_path{pm}, base_model_path{bm},
+                                                        image_classifier_path{cm},
+                                                        out_node{out_node}, lid{lid} {}
 
     int svc_init() {
-
         // Load torch  models
-        std::cout << "[ Camera " << camera_id << " ] Loading base model (" << base_model_path << ") image classifier (" << image_classifier_path
-                << ") projection matrix (" << projection_matrix_path <<std::endl;
-        
+        std::cout << "[ Camera " << camera_id << " ] Loading base model (" << base_model_path << ") image classifier ("
+                  << image_classifier_path << ") projection matrix (" << projection_matrix_path << std::endl;
+
         // perspective matrix [3x3]
         torch::jit::script::Module container = torch::jit::load(projection_matrix_path);
-        
+
         torch::Tensor pm = container.attr("data").toTensor();
         perspective_matrix = tensorToProjectionMat(pm);
-
         // std::cout << perspective_matrix << std::endl;
 
         // base model
-        base_model = new Net<torch::jit::Module>(base_model_path.c_str());
-
+        base_model = new Net<torch::jit::Module>(base_model_path);
         // image classifier
         img_classifier = new Net<torch::jit::Module>(image_classifier_path);
 
@@ -98,10 +94,9 @@ struct CameraNode : ff_monode_t<int, Frame> {
         // Read next frame
         cap.read(frame);
         if (frame.empty()) {
-            std::cout << "Finish Video\n";
+            std::cout << camera_id << " finished video.\n";
             return EOS;
         } else {
-
             // Process frame using base model
             torch::Tensor imgTensor = imgToTensor(frame);
             torch::Tensor img_feature = base_model->forward({imgTensor});
@@ -112,18 +107,18 @@ struct CameraNode : ff_monode_t<int, Frame> {
                     torch::nn::functional::InterpolateFuncOptions()
                             .mode(torch::kBilinear)
                             .size(std::vector<int64_t>({270, 480}))
-                    );
+            );
 
             // Image classifier
             torch::Tensor img_res = img_classifier->forward({img_feature_upscaled});
 
             // Create Frame with buffer for output data
-            Frame * fr = new Frame(out_node, lid, *i);
+            Frame *fr = new Frame(out_node, lid, *i);
 
             // Warp perspective 
             cv::Mat img_feature_mat = tensorToFeat(img_feature);
             cv::warpPerspective(img_feature_mat, fr->frame, perspective_matrix, {120, 360});
-    
+
             // Send it out
             ff_send_out_to(fr, out_node);
             delete i;
@@ -133,7 +128,7 @@ struct CameraNode : ff_monode_t<int, Frame> {
 
     void svc_end() {
         cap.release();
-        std::cout << "[ Camera " << camera_id << " ] Video closed, process finished. " << std::endl;
+        std::cout << "[ Camera " << camera_id << " ] Video closed, process finished." << std::endl;
     }
 
     //----------------------------------------------------------------------------------------------------------
@@ -146,14 +141,15 @@ struct CameraNode : ff_monode_t<int, Frame> {
     cv::VideoCapture cap;
     cv::Mat frame;
     cv::Mat perspective_matrix;
-    Net <torch::jit::Module> * base_model;
-    Net <torch::jit::Module> * img_classifier;
+    Net <torch::jit::Module> *base_model;
+    Net <torch::jit::Module> *img_classifier;
 };
 
 struct AggregatorNode : ff_minode_t<Frame> {
-    AggregatorNode(std::string id, std::string mm, int n_cameras) : id{id},  n_cameras{n_cameras},  buffer(n_cameras, nullptr),
-        // tensors(nullptr, n_cameras),
-        map_classifier_path{mm} {}
+    AggregatorNode(std::string id, std::string mm, int n_cameras) : id{id}, n_cameras{n_cameras},
+                                                                    buffer(n_cameras, nullptr),
+            // tensors(nullptr, n_cameras),
+                                                                    map_classifier_path{mm} {}
 
     Frame *svc(Frame *f) {
         std::cout << id << " recv: square " << f->id_square << " camera " << f->id_camera << " frame " << f->id_frame
@@ -175,11 +171,11 @@ struct AggregatorNode : ff_minode_t<Frame> {
 
             // Concatenate list of tensors into one big tensor
 
-			// at::tensor world_features_cat = torch::cat(torch::TensorList(world_features), 1);
+            // at::tensor world_features_cat = torch::cat(torch::TensorList(world_features), 1);
 
             // Feed tensor into model
-			    // at::tensor map_result = map_classifier->forward(world_features_cat);
-            
+            // at::tensor map_result = map_classifier->forward(world_features_cat);
+
             // Send out result TODO
             ff_send_out(new Frame(f->id_square, f->id_frame));
 
@@ -199,7 +195,6 @@ struct AggregatorNode : ff_minode_t<Frame> {
     std::string id;
     std::vector<Frame *> buffer;
     torch::TensorList tensors;
-    
     std::string map_classifier_path;
 };
 
@@ -207,10 +202,9 @@ struct ControlRoom : ff_node_t<Frame, int> {
     ControlRoom(int n_aggregators) : n_aggregators{n_aggregators} {}
 
     int *svc(Frame *f) {
-        std::cout << "Sink recv: square " << f->id_square << " camera " << f->id_camera << " frame " << f->id_frame
-                  << std::endl;
-        delete f;
+        std::cout << "Sink recv: square " << f->id_square << " frame " << f->id_frame << std::endl;
 
+        delete f;
         counter++;
 
         // Received all aggragted results? Start new round
@@ -218,7 +212,6 @@ struct ControlRoom : ff_node_t<Frame, int> {
             counter = 0;
             ff_send_out(new int(0));
         }
-
         return GO_ON;
     }
 
@@ -248,14 +241,14 @@ int main(int argc, char *argv[]) {
     // then this could be std::vector
     std::size_t ncam{7};
     std::size_t nsqu{1};
-    std::string image_path = "/mnt/shared/gmittone/23_dml_icc/Image_subsets_test";
-    std::string base_models_path = "/mnt/home/birke/Data/Wildtrack_Trained_MVDet";
+    std::string image_path = "/mnt/shared/gmittone/FastFederatedLearning/mvdet_data/Image_subsets_test";
+    std::string data_path = "/mnt/shared/gmittone/FastFederatedLearning/mvdet_data";
 
     // Parameters parsing
     if (argc >= 2)
         if (strcmp(argv[1], "-h") == 0) {
             if (groupName.compare(sinkName) == 0)
-                std::cout << "Usage: mvdet_ff [num_cameras=7] [num_agg=1] [data_path]\n";
+                std::cout << "Usage: mvdet_ff [num_cameras=7] [num_agg=1] [image_path] [data_path]\n";
             exit(0);
         } else
             ncam = atoi(argv[1]);
@@ -277,16 +270,17 @@ int main(int argc, char *argv[]) {
     std::vector < AggregatorNode * > secondset;
     for (int i = 0; i < nsqu; i++) {
         std::string rank = std::to_string(i + 1);
-        secondset.push_back(new AggregatorNode("A" + rank, base_models_path + "/map_classifier.pt", ncam));
+        secondset.push_back(new AggregatorNode("A" + rank, data_path + "/map_classifier.pt", ncam));
     }
 
     std::vector < CameraNode * > firstset;
     for (int j = 0; j < nsqu; j++)
         for (int i = 0; i < ncam; i++) {
             std::string rank = std::to_string(i + j + 1);
-            firstset.push_back(new CameraNode("C" + rank, image_path + "/C" + rank+"/%08d.png",
-                base_models_path + "/proj_mat_cam" + rank + ".pt", base_models_path + "/base_model.pt",
-                base_models_path + "/image_classifier.pt",  i, j));
+            firstset.push_back(new CameraNode("C" + rank, image_path + "/C" + rank + "/%08d.png",
+                                              data_path + "/proj_mat_cam" + rank + ".pt",
+                                              data_path + "/base_model.pt",
+                                              data_path + "/image_classifier.pt", i, j));
         }
 
     // ---- FastFlow graph -------
