@@ -29,10 +29,10 @@ cv::Mat tensorToImg(const torch::Tensor &tensor) {
 
 cv::Mat tensorToProjectionMat(const torch::Tensor &tensor) {
 
-    return cv::Mat(tensor.size(0),
-                   tensor.size(1),
-                   CV_32F,
-                   tensor.data_ptr<float>());
+    return cv::Mat(tensor.size(1),
+                   tensor.size(2),
+                   CV_64F,
+                   tensor.data_ptr<double>());
 }
 
 void show_results(const cv::Mat& frame) {

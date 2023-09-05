@@ -55,8 +55,7 @@ struct Source : ff_node_t<int> {
 
 struct CameraNode : ff_monode_t<int, Frame> {
     CameraNode(std::string camera_id, std::string vp, std::string pm, std::string bm,
-            std::string cm, int lid, int out_node) : camera_id{camera_id},
-                                                                                         video_path{vp},
+            std::string cm, int lid, int out_node) : camera_id{camera_id}, video_path{vp},
                     projection_matrix_path{pm}, base_model_path{bm}, image_classifier_path{cm},
             out_node{out_node}, lid{lid} {}
 
@@ -72,8 +71,10 @@ struct CameraNode : ff_monode_t<int, Frame> {
         torch::Tensor pm = container.attr("data").toTensor();
         perspective_matrix = tensorToProjectionMat(pm);
 
+        // std::cout << perspective_matrix << std::endl;
+
         // base model
-        base_model = new Net<torch::jit::Module>(base_model_path);
+        base_model = new Net<torch::jit::Module>(base_model_path.c_str());
 
         // image classifier
         img_classifier = new Net<torch::jit::Module>(image_classifier_path);
@@ -151,6 +152,7 @@ struct CameraNode : ff_monode_t<int, Frame> {
 
 struct AggregatorNode : ff_minode_t<Frame> {
     AggregatorNode(std::string id, std::string mm, int n_cameras) : id{id},  n_cameras{n_cameras},  buffer(n_cameras, nullptr),
+        // tensors(nullptr, n_cameras),
         map_classifier_path{mm} {}
 
     Frame *svc(Frame *f) {
@@ -166,12 +168,18 @@ struct AggregatorNode : ff_minode_t<Frame> {
         if (counter >= n_cameras) {
             // TODO: Process frame
 
-            /*
-			    at::tensor world_features_cat = torch::cat(torch::TensorList(world_features), 1);
-			    at::tensor map_result = map_classifier.forward(world_features_cat);
+            // Convert Map to Tensor and populate List of Tensors
+
+            // ...
+
+            // Concatenate list of tensors into one big tensor
+
+			// at::tensor world_features_cat = torch::cat(torch::TensorList(world_features), 1);
+
+            // Feed tensor into model
+			    // at::tensor map_result = map_classifier->forward(world_features_cat);
             
-            */
-            // Send out result
+            // Send out result TODO
             ff_send_out(new Frame(f->id_square, f->id_frame));
 
             // Free buffer for next round
@@ -189,6 +197,7 @@ struct AggregatorNode : ff_minode_t<Frame> {
     int n_cameras;
     std::string id;
     std::vector<Frame *> buffer;
+    torch::TensorList tensors;
     
     std::string map_classifier_path;
 };
@@ -267,7 +276,7 @@ int main(int argc, char *argv[]) {
     std::vector < AggregatorNode * > secondset;
     for (int i = 0; i < nsqu; i++) {
         std::string rank = std::to_string(i + 1);
-        secondset.push_back(new AggregatorNode("A" + rank, base_models_path + "map_classifier.pt", ncam));
+        secondset.push_back(new AggregatorNode("A" + rank, base_models_path + "/map_classifier.pt", ncam));
     }
 
     std::vector < CameraNode * > firstset;
@@ -275,7 +284,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < ncam; i++) {
             std::string rank = std::to_string(i + j + 1);
             firstset.push_back(new CameraNode("C" + rank, image_path + "/C" + rank+"/%08d.png",
-                base_models_path + "proj_mat_cam" + rank + ".pt", base_models_path + "/base_model.pt",
+                base_models_path + "/proj_mat_cam" + rank + ".pt", base_models_path + "/base_model.pt",
                 base_models_path + "/image_classifier.pt",  i, j));
         }
 
