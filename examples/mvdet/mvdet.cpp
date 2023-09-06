@@ -98,11 +98,11 @@ struct CameraNode : ff_monode_t<int, Frame> {
             return EOS;
         } else {
             // Process frame using base model
-            show_results(frame, "frame");
+            //show_results(frame, "frame");
             torch::Tensor imgTensor = imgToTensor(frame);
-            show_results(imgTensor, "tensor");
+            //show_results(imgTensor, "tensor");
             torch::Tensor img_feature = base_model->forward({imgTensor});
-            show_results(img_feature, "features");
+            //show_results(img_feature, "features");
 
             // Upscaling
             //torch::Tensor img_feature_upscaled = torch::nn::functional::interpolate(
@@ -120,9 +120,9 @@ struct CameraNode : ff_monode_t<int, Frame> {
 
             // Warp perspective 
             cv::Mat img_feature_mat = tensorToFeat(img_feature);
-            show_results(img_feature_mat, "feature_map");
+            //show_results(img_feature_mat, "feature_map");
             cv::warpPerspective(img_feature_mat, fr->frame, perspective_matrix, {360, 120});
-            show_results(fr->frame, "warp result");
+            //show_results(fr->frame, "warp result");
 
             // Send it out
             ff_send_out_to(fr, out_node);
