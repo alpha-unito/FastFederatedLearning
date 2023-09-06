@@ -24,7 +24,9 @@ struct Frame {
     }
 
     template<class Archive>
-    void serialize(Archive &archive) { archive(id_square, id_camera, id_frame); } //TODO: serialize frame (già come tensore)
+    void serialize(Archive &archive) {
+        archive(id_square, id_camera, id_frame);
+    } //TODO: serialize frame (già come tensore)
 
     cv::Mat frame;
     int id_square;
@@ -96,33 +98,31 @@ struct CameraNode : ff_monode_t<int, Frame> {
             return EOS;
         } else {
             // Process frame using base model
-            std::cout << frame << std::endl;
-            //show_results(frame);
-            //sleep(5);
+            show_results(frame, "frame");
             torch::Tensor imgTensor = imgToTensor(frame);
+            show_results(imgTensor, "tensor");
             torch::Tensor img_feature = base_model->forward({imgTensor});
+            show_results(img_feature, "features");
 
             // Upscaling
-            torch::Tensor img_feature_upscaled = torch::nn::functional::interpolate(
-                    img_feature,
-                    torch::nn::functional::InterpolateFuncOptions()
-                            .mode(torch::kBilinear)
-                            .size(std::vector<int64_t>({270, 480}))
-            );
+            //torch::Tensor img_feature_upscaled = torch::nn::functional::interpolate(
+            //        img_feature,
+            //        torch::nn::functional::InterpolateFuncOptions()
+            //                .mode(torch::kBilinear)
+            //                .size(std::vector<int64_t>({270, 480}))
+            //);
 
             // Image classifier
-            //TODO: Il risultato di questo sembra inutile
-            torch::Tensor img_res = img_classifier->forward({img_feature_upscaled});
+            //torch::Tensor img_res = img_classifier->forward({img_feature_upscaled});
 
             // Create Frame with buffer for output data
             Frame *fr = new Frame(out_node, lid, *i);
 
             // Warp perspective 
             cv::Mat img_feature_mat = tensorToFeat(img_feature);
-            //show_results(img_feature_mat);
-            //sleep(5);
-            cv::warpPerspective(img_feature_mat, fr->frame, perspective_matrix, {120, 360});
-            //std::cout << fr->frame << std::endl;
+            show_results(img_feature_mat, "feature_map");
+            cv::warpPerspective(img_feature_mat, fr->frame, perspective_matrix, {360, 120});
+            show_results(fr->frame, "warp result");
 
             // Send it out
             ff_send_out_to(fr, out_node);

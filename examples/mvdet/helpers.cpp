@@ -5,11 +5,8 @@ torch::Tensor imgToTensor(const cv::Mat &frame) {
     // processing cv image to adapt to the model input
     cv::Mat img;
 
-    cv::resize(frame, img, cv::Size(1280, 720));
-    cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
-    //std::cout << img.size() << std::endl;
-    //std::cout << "rows" << img.rows << std::endl;
-    //std::cout << "cols" << img.cols << std::endl;
+    cv::resize(frame, img, cv::Size(1280, 720), 0, 0, 1);
+    //cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
     torch::Tensor imgTensor = torch::from_blob(img.data, {img.rows, img.cols, img.channels()}, torch::kByte);
 
     // add batch dimension, from [3,640,640] to [1,3,640,640]
@@ -35,17 +32,24 @@ torch::Tensor featToTensor(const cv::Mat &feat) {
 // Convert a video frame form tensor to opencv mat format.permute({1, 0, 2})
 // TODO: check this
 cv::Mat tensorToFeat(const torch::Tensor &tensor) {
-    torch::Tensor buffer = tensor.squeeze(0).permute({1, 2, 0}).toType(torch::kFloat).contiguous();
-    return cv::Mat(buffer.size(0), buffer.size(1), CV_32F, buffer.data_ptr<float>());
+    torch::Tensor buffer = tensor.squeeze(0).mul(255).permute({1, 2, 0}).toType(torch::kByte);
+    return cv::Mat(buffer.size(0), buffer.size(1), CV_8UC3, buffer.data_ptr<uchar>());
 }
 
 cv::Mat tensorToProjectionMat(const torch::Tensor &tensor) {
     return cv::Mat(tensor.size(1), tensor.size(2), CV_64F, tensor.data_ptr<double>());
 }
 
-void show_results(const cv::Mat &frame) {
-    cv::imshow("", frame);
-    cv::waitKey(1);
+void show_results(const cv::Mat &frame, const std::string title) {
+    cv::Mat dst;
+    cv::normalize(frame, dst, 0, 255, cv::NORM_MINMAX);
+    cv::imshow(title, dst);
+    cv::waitKey(0);
+}
+
+void show_results(const torch::Tensor &tensor, const std::string title) {
+    cv::Mat dst = tensorToFeat(tensor);
+    show_results(dst, title);
 }
 
 

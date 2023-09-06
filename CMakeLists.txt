@@ -41,7 +41,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS} -pthread")
 add_compile_definitions(NO_DEFAULT_MAPPING)
 
 #add_definitions(-DPRINT_IR)
-add_compile_options(-O3)
+add_compile_options(-g)
 
 # The example folder contains the actual examples' code
 add_subdirectory(examples)

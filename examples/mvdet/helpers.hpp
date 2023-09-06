@@ -9,4 +9,6 @@ cv::Mat tensorToFeat(const torch::Tensor &tensor);
 
 cv::Mat tensorToProjectionMat(const torch::Tensor &tensor);
 
-void show_results(const cv::Mat &frame);
+void show_results(const cv::Mat &frame, const std::string title);
+
+void show_results(const torch::Tensor &frame, const std::string title);
