@@ -111,6 +111,7 @@ struct CameraNode : ff_monode_t<int, Frame> {
             );
 
             // Image classifier
+            //TODO: Il risultato di questo sembra inutile
             torch::Tensor img_res = img_classifier->forward({img_feature_upscaled});
 
             // Create Frame with buffer for output data

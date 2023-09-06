@@ -6,17 +6,11 @@ torch::Tensor imgToTensor(const cv::Mat &frame) {
     cv::Mat img;
     // cv::resize(frame, img, cv::Size(MOD_W, MOD_H));
     cv::cvtColor(frame, img, cv::COLOR_BGR2RGB);
-    //std::cout << img.rows << img.cols << img.channels() << std::endl;
     torch::Tensor imgTensor = torch::from_blob(img.data, {img.rows, img.cols, img.channels()}, torch::kByte);
-    //std::cout << imgTensor.sizes() << std::endl;
 
-    imgTensor = imgTensor.permute({2, 0, 1});
-    imgTensor = imgTensor.toType(torch::kFloat);
     //imgTensor = imgTensor.div(255); // TODO: perché questo?
-    imgTensor = imgTensor.unsqueeze(0);  // add batch dimension, from [3,640,640] to [1,3,640,640]
-    //std::cout << imgTensor.sizes() << std::endl;
-
-    return imgTensor;
+    // add batch dimension, from [3,640,640] to [1,3,640,640]
+    return imgTensor.toType(torch::kFloat).permute({2, 0, 1}).unsqueeze(0);
 }
 
 // Convert eth image features from MAt to Tensor
@@ -38,21 +32,12 @@ torch::Tensor featToTensor(const cv::Mat &feat) {
 // Convert a video frame form tensor to opencv mat format
 // TODO: check this
 cv::Mat tensorToFeat(const torch::Tensor &tensor) {
-    std::vector<int> sizes;
-
-    torch::Tensor buffer = tensor.squeeze(0);
-    buffer = buffer.toType(torch::kFloat);
-    buffer = buffer.permute({1, 0, 2});
-
+    torch::Tensor buffer = tensor.squeeze(0).contiguous().toType(torch::kFloat).permute({1, 0, 2});
     return cv::Mat(buffer.size(0), buffer.size(1), CV_32F, buffer.data_ptr<float>());
 }
 
 cv::Mat tensorToProjectionMat(const torch::Tensor &tensor) {
-
-    return cv::Mat(tensor.size(1),
-                   tensor.size(2),
-                   CV_64F,
-                   tensor.data_ptr<double>());
+    return cv::Mat(tensor.size(1), tensor.size(2), CV_64F, tensor.data_ptr<double>());
 }
 
 void show_results(const cv::Mat &frame) {
