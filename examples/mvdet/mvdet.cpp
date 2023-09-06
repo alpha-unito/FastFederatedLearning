@@ -24,7 +24,7 @@ struct Frame {
     }
 
     template<class Archive>
-    void serialize(Archive &archive) { archive(id_square, id_camera, id_frame); }
+    void serialize(Archive &archive) { archive(id_square, id_camera, id_frame); } //TODO: serialize frame (già come tensore)
 
     cv::Mat frame;
     int id_square;
@@ -65,14 +65,11 @@ struct CameraNode : ff_monode_t<int, Frame> {
 
         // perspective matrix [3x3]
         torch::jit::script::Module container = torch::jit::load(projection_matrix_path);
-
         torch::Tensor pm = container.attr("data").toTensor();
         perspective_matrix = tensorToProjectionMat(pm);
-        // std::cout << perspective_matrix << std::endl;
 
-        // base model
+        // base model & image classifier
         base_model = new Net<torch::jit::Module>(base_model_path);
-        // image classifier
         img_classifier = new Net<torch::jit::Module>(image_classifier_path);
 
         std::cout << "[ Camera " << camera_id << " ] Starting to process video..." << video_path << std::endl;
@@ -99,6 +96,9 @@ struct CameraNode : ff_monode_t<int, Frame> {
             return EOS;
         } else {
             // Process frame using base model
+            std::cout << frame << std::endl;
+            //show_results(frame);
+            //sleep(5);
             torch::Tensor imgTensor = imgToTensor(frame);
             torch::Tensor img_feature = base_model->forward({imgTensor});
 
@@ -119,7 +119,10 @@ struct CameraNode : ff_monode_t<int, Frame> {
 
             // Warp perspective 
             cv::Mat img_feature_mat = tensorToFeat(img_feature);
+            //show_results(img_feature_mat);
+            //sleep(5);
             cv::warpPerspective(img_feature_mat, fr->frame, perspective_matrix, {120, 360});
+            //std::cout << fr->frame << std::endl;
 
             // Send it out
             ff_send_out_to(fr, out_node);
@@ -150,12 +153,13 @@ struct CameraNode : ff_monode_t<int, Frame> {
 struct AggregatorNode : ff_minode_t<Frame> {
     AggregatorNode(std::string id, std::string mm, int n_cameras) : id{id}, n_cameras{n_cameras},
                                                                     buffer(n_cameras, nullptr),
-            // tensors(nullptr, n_cameras),
                                                                     map_classifier_path{mm} {}
+    // tensors(nullptr, n_cameras),
 
     Frame *svc(Frame *f) {
-        std::cout << id << " recv: square " << f->id_square << " camera " << f->id_camera << " frame " << f->id_frame
-                  << std::endl;
+        std::cout << id << " recv: square " << f->id_square
+                  << " camera " << f->id_camera
+                  << " frame " << f->id_frame << std::endl;
         assert(f->id_camera >= 0 && f->id_camera < n_cameras);
 
         // Save frame in buffer
@@ -165,6 +169,8 @@ struct AggregatorNode : ff_minode_t<Frame> {
         // Buffer full? Process it
         if (counter >= n_cameras) {
             // TODO: Process frame
+
+            std::cout << buffer[0]->frame.size() << endl;
 
             // Convert Map to Tensor and populate List of Tensors
             // expected tensor shape: torch.Size([1, 512, 120, 360])
