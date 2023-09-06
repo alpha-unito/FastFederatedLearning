@@ -25,30 +25,28 @@ torch::Tensor featToTensor(const cv::Mat &feat) {
             0);  // add batch dimension, from [3,640,640] to [1,3,640,640]
 
 // [1, 512, 120, 360]
-
     return imgTensor;
 }
 
-// Convert a video frame form tensor to opencv mat format.permute({1, 0, 2})
-// TODO: check this
-cv::Mat tensorToFeat(const torch::Tensor &tensor) {
-    torch::Tensor buffer = tensor.squeeze(0).mul(255).permute({1, 2, 0}).toType(torch::kByte);
+// Convert a video frame form tensor to opencv mat format
+cv::Mat tensorToFeat(const torch::Tensor &tensor, int mult) {
+    torch::Tensor buffer = tensor.squeeze(0).permute({1, 2, 0}).mul(mult).toType(torch::kByte);
     return cv::Mat(buffer.size(0), buffer.size(1), CV_8UC3, buffer.data_ptr<uchar>());
 }
 
 cv::Mat tensorToProjectionMat(const torch::Tensor &tensor) {
-    return cv::Mat(tensor.size(1), tensor.size(2), CV_64F, tensor.data_ptr<double>());
+    return cv::Mat(tensor.size(2), tensor.size(1), CV_64F, tensor.data_ptr<double>());
 }
 
 void show_results(const cv::Mat &frame, const std::string title) {
-    cv::Mat dst;
-    cv::normalize(frame, dst, 0, 255, cv::NORM_MINMAX);
-    cv::imshow(title, dst);
+    //cv::Mat dst;
+    //cv::normalize(frame, dst, 0, 1, cv::NORM_MINMAX);
+    cv::imshow(title, frame);
     cv::waitKey(0);
 }
 
 void show_results(const torch::Tensor &tensor, const std::string title) {
-    cv::Mat dst = tensorToFeat(tensor);
+    cv::Mat dst = tensorToFeat(tensor, 255);
     show_results(dst, title);
 }
 

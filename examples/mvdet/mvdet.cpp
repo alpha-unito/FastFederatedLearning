@@ -98,11 +98,11 @@ struct CameraNode : ff_monode_t<int, Frame> {
             return EOS;
         } else {
             // Process frame using base model
-            //show_results(frame, "frame");
+            show_results(frame, "frame");
             torch::Tensor imgTensor = imgToTensor(frame);
-            //show_results(imgTensor, "tensor");
+            show_results(imgTensor, "tensor");
             torch::Tensor img_feature = base_model->forward({imgTensor});
-            //show_results(img_feature, "features");
+            show_results(img_feature, "features");
 
             // Upscaling
             //torch::Tensor img_feature_upscaled = torch::nn::functional::interpolate(
@@ -119,10 +119,10 @@ struct CameraNode : ff_monode_t<int, Frame> {
             Frame *fr = new Frame(out_node, lid, *i);
 
             // Warp perspective 
-            cv::Mat img_feature_mat = tensorToFeat(img_feature);
-            //show_results(img_feature_mat, "feature_map");
+            cv::Mat img_feature_mat = tensorToFeat(img_feature, 1);
+            show_results(tensorToFeat(img_feature, 255), "feature_map");
             cv::warpPerspective(img_feature_mat, fr->frame, perspective_matrix, {360, 120});
-            //show_results(fr->frame, "warp result");
+            show_results(fr->frame, "warp result");
 
             // Send it out
             ff_send_out_to(fr, out_node);
@@ -279,15 +279,16 @@ int main(int argc, char *argv[]) {
 
     std::vector < AggregatorNode * > secondset;
     for (int i = 0; i < nsqu; i++) {
-        std::string rank = std::to_string(i + 1);
-        secondset.push_back(new AggregatorNode("A" + rank, data_path + "/map_classifier.pt", ncam));
+        std::string id = std::to_string(i + 1);
+        secondset.push_back(new AggregatorNode("A" + id, data_path + "/map_classifier.pt", ncam));
     }
 
     std::vector < CameraNode * > firstset;
     for (int j = 0; j < nsqu; j++)
         for (int i = 0; i < ncam; i++) {
-            std::string rank = std::to_string(i + j + 1);
-            firstset.push_back(new CameraNode("C" + rank, image_path + "/C" + rank + "/%08d.png",
+            std::string rank = std::to_string(i + j);
+            std::string id = std::to_string(i + j + 1);
+            firstset.push_back(new CameraNode("C" + id, image_path + "/C" + id + "/%08d.png",
                                               data_path + "/proj_mat_cam" + rank + ".pt",
                                               data_path + "/base_model.pt",
                                               data_path + "/image_classifier.pt", i, j));
@@ -304,12 +305,12 @@ int main(int argc, char *argv[]) {
     // --- distributed groups ----
     source.createGroup("S0");
     for (int i = 0; i < ncam_x_nsqu; i++) {
-        std::string rank = std::to_string(i + 1);
-        a2a.createGroup("C" + rank) << firstset[i];
+        std::string id = std::to_string(i + 1);
+        a2a.createGroup("C" + id) << firstset[i];
     }
     for (int i = 0; i < nsqu; i++) {
-        std::string rank = std::to_string(i + 1);
-        a2a.createGroup("A" + rank) << secondset[i];
+        std::string id = std::to_string(i + 1);
+        a2a.createGroup("A" + id) << secondset[i];
     }
     controlRoom.createGroup("S8");
 
