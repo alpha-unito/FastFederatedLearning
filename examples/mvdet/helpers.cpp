@@ -35,7 +35,7 @@ cv::Mat tensorToFeat(const torch::Tensor &tensor, int mult) {
 }
 
 cv::Mat tensorToProjectionMat(const torch::Tensor &tensor) {
-    return cv::Mat(tensor.size(2), tensor.size(1), CV_64F, tensor.data_ptr<double>());
+    return cv::Mat(tensor.size(1), tensor.size(0), CV_32F, tensor.data_ptr());
 }
 
 void show_results(const cv::Mat &frame, const std::string title) {

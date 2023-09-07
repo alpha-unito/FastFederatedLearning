@@ -68,9 +68,8 @@ struct CameraNode : ff_monode_t<int, Frame> {
         // perspective matrix [3x3]
         torch::jit::script::Module container = torch::jit::load(projection_matrix_path);
         torch::Tensor pm = container.attr("data").toTensor();
-        perspective_matrix = tensorToProjectionMat(pm);
+        perspective_matrix = tensorToProjectionMat(pm).clone();
 
-        // base model & image classifier
         base_model = new Net<torch::jit::Module>(base_model_path);
         img_classifier = new Net<torch::jit::Module>(image_classifier_path);
 
