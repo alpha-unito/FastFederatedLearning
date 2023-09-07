@@ -4,6 +4,8 @@
 // Converts a video frame into a tensor that can be used as input to the model.
 torch::Tensor imgToTensor(const cv::Mat &frame);
 
+torch::Tensor featToTensor(const cv::Mat &feat);
+
 // to check
 cv::Mat tensorToFeat(const torch::Tensor &tensor, int mult);
 
