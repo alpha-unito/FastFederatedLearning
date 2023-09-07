@@ -62,12 +62,14 @@ template<class Archive>
 void save(Archive &archive, Frame const &f) {
     std::ostringstream oss;
     uint32_t size = f.frame.total() * f.frame.elemSize();
+    uint32_t channels = f.frame.channels();
 
     oss.write((const char *) &f.id_square, sizeof(f.id_square));
     oss.write((const char *) &f.id_camera, sizeof(f.id_camera));
     oss.write((const char *) &f.id_frame, sizeof(f.id_frame));
     oss.write((const char *) &f.rows, sizeof(f.rows));
     oss.write((const char *) &f.cols, sizeof(f.cols));
+    oss.write((const char *) &channels, sizeof(channels));
     oss.write((const char *) &size, sizeof(size));
     oss.write((const char *) f.frame.data, size);
     archive(oss.str());
@@ -79,14 +81,16 @@ void load(Archive &archive, Frame &f) {
     archive(oss);
     std::istringstream iss(oss);
     uint32_t size;
+    uint32_t channels;
 
     iss.read((char *) &f.id_square, sizeof(f.id_square));
     iss.read((char *) &f.id_camera, sizeof(f.id_camera));
     iss.read((char *) &f.id_frame, sizeof(f.id_frame));
     iss.read((char *) &f.rows, sizeof(f.rows));
     iss.read((char *) &f.cols, sizeof(f.cols));
+    iss.read((char *) &channels, sizeof(channels));
     iss.read((char *) &size, sizeof(size));
-    f.frame = cv::Mat(f.rows, f.cols, CV_8UC(512)).clone();
+    f.frame = cv::Mat(f.rows, f.cols, CV_8UC(channels)).clone();
     iss.read((char *) f.frame.data, size);
 }
 
@@ -255,7 +259,7 @@ public:
     }
 };
 
-struct AggregatorNode : ff_minode_t<Frame, View> {
+struct AggregatorNode : ff_minode_t<Frame, Frame> {
 private:
     int counter = 0;
     int n_cameras;
@@ -263,16 +267,16 @@ private:
     std::vector<Frame *> buffer;
     torch::TensorList tensors;
     std::string map_classifier_path;
-    std::string coord_mat_path = "/mnt/shared/gmittone/FastFederatedLearning/mvdet_data/coord_map.pt";
+    std::string coord_mat_path;
     torch::Tensor coord_tensor;
     Net <torch::jit::Module> *map_classifier;
 public:
     AggregatorNode() = delete;
 
     // tensors(nullptr, n_cameras)
-    AggregatorNode(std::string id, std::string mm, int n_cameras) : id{id}, n_cameras{n_cameras},
+    AggregatorNode(std::string id, std::string mm, std::string cm, int n_cameras) : id{id}, n_cameras{n_cameras},
                                                                     buffer(n_cameras, nullptr),
-                                                                    map_classifier_path{mm} {}
+                                                                    map_classifier_path{mm}, coord_mat_path{cm} {}
 
     int svc_init() {
         map_classifier = new Net<torch::jit::Module>(map_classifier_path);
@@ -283,7 +287,7 @@ public:
         return 0;
     }
 
-    View *svc(Frame *f) {
+    Frame *svc(Frame *f) {
         std::cout << id << " recv: square " << f->id_square << " camera " << f->id_camera << " frame " << f->id_frame
                   << std::endl;
         assert(f->id_camera >= 0 && f->id_camera < n_cameras);
@@ -318,14 +322,15 @@ public:
 
             torch::Tensor world_features_cat = torch::cat({t0, t1, t2, t3, t4, t5, t6, coord_tensor}, 1);
 
-            View *view = new View(f->id_square, f->id_frame);
-
             // Feed tensor into model
+            torch::Tensor view = map_classifier->forward(world_features_cat);
 
-            view->view = map_classifier->forward(world_features_cat).clone();
+            Frame *fr = new Frame(f->id_square, -1, f->id_frame, 120, 360);
+
+            fr->frame = tensorToImg(view, 1);
 
             // Send out result TODO
-            ff_send_out(view);
+            ff_send_out(fr);
 
             // Free buffer for next round
             counter = 0;
@@ -338,7 +343,7 @@ public:
     }
 };
 
-struct ControlRoom : ff_node_t<View, int> {
+struct ControlRoom : ff_node_t<Frame, int> {
 private:
     int counter = 0;
     int n_aggregators;
@@ -347,8 +352,10 @@ public:
 
     ControlRoom(int n_aggregators) : n_aggregators{n_aggregators} {}
 
-    int *svc(View *f) {
+    int *svc(Frame *f) {
         std::cout << "Sink recv: square " << f->id_square << " frame " << f->id_frame << std::endl;
+        // show_results(f->frame, "control room result");
+        std::cout << f->frame.rows << "x" << f->frame.cols << " channels: " << f->frame.channels() << std::endl;
 
         delete f;
         counter++;
@@ -361,7 +368,6 @@ public:
         return GO_ON;
     }
 };
-
 
 int main(int argc, char *argv[]) {
     std::string groupName = "S0";
@@ -414,7 +420,7 @@ int main(int argc, char *argv[]) {
     std::vector < AggregatorNode * > secondset;
     for (int i = 0; i < nsqu; i++) {
         std::string id = std::to_string(i + 1);
-        secondset.push_back(new AggregatorNode("A" + id, data_path + "/map_classifier.pt", ncam));
+        secondset.push_back(new AggregatorNode("A" + id, data_path + "/map_classifier.pt", data_path + "/coord_map.pt", ncam));
     }
 
     std::vector < CameraNode * > firstset;

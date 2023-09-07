@@ -13,6 +13,12 @@ torch::Tensor imgToTensor(const cv::Mat &frame) {
     return imgTensor.toType(torch::kFloat).permute({2, 0, 1}).div(255).unsqueeze(0);
 }
 
+// Convert a view tensor to opencv mat format (black and white)
+cv::Mat tensorToImg(const torch::Tensor &tensor, int mult) {
+    torch::Tensor buffer = tensor.squeeze(0).permute({1, 2, 0}).mul(mult).toType(torch::kByte);
+    return cv::Mat(buffer.size(0), buffer.size(1), CV_8UC(1), buffer.data_ptr<uchar>());
+}
+
 // Convert eth image features from MAt to Tensor
 torch::Tensor featToTensor(const cv::Mat &feat) {
     // processing cv image to adapt to the model input

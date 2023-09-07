@@ -7,6 +7,8 @@ torch::Tensor imgToTensor(const cv::Mat &frame);
 torch::Tensor featToTensor(const cv::Mat &feat);
 
 // to check
+cv::Mat tensorToImg(const torch::Tensor &tensor, int mult) ;
+
 cv::Mat tensorToFeat(const torch::Tensor &tensor, int mult);
 
 cv::Mat tensorToProjectionMat(const torch::Tensor &tensor);
