@@ -97,13 +97,13 @@ public:
             return this->EOS;
         } else {
             // Process frame using base model
-            show_results(frame, "frame");
+            // show_results(frame, "frame");
             torch::Tensor imgTensor = imgToTensor(frame);
-            show_results(imgTensor, "tensor");
+            // show_results(imgTensor, "tensor");
             imgTensor[0][0] = imgTensor[0][0].sub(0.485).div(0.229);
             imgTensor[0][1] = imgTensor[0][1].sub(0.456).div(0.224);
             imgTensor[0][2] = imgTensor[0][2].sub(0.406).div(0.225);
-            show_results(imgTensor, "normalised tensor");
+            // show_results(imgTensor, "normalised tensor");
             torch::Tensor img_feature = base_model->forward({imgTensor});
 
             // Upscaling
@@ -143,18 +143,17 @@ private:
     int counter = 0;
     int n_cameras;
     std::string id;
-    std::vector<Frame *> buffer;
+    std::vector<torch::Tensor> buffer;
     torch::TensorList tensors;
     std::string map_classifier_path;
     std::string coord_mat_path;
-    torch::Tensor coord_tensor;
     Net <torch::jit::Module> *map_classifier;
 public:
     AggregatorNode() = delete;
 
     // tensors(nullptr, n_cameras)
     AggregatorNode(std::string id, std::string mm, std::string cm, int n_cameras) : id{id}, n_cameras{n_cameras},
-                                                                                    buffer(n_cameras, nullptr),
+                                                                                    buffer(n_cameras+1),
                                                                                     map_classifier_path{mm},
                                                                                     coord_mat_path{cm} {}
 
@@ -162,7 +161,7 @@ public:
         map_classifier = new Net<torch::jit::Module>(map_classifier_path);
 
         torch::jit::script::Module container = torch::jit::load(coord_mat_path);
-        coord_tensor = container.attr("data").toTensor();
+        buffer[n_cameras] = container.attr("data").toTensor(); // last element is always coordinates matrix
 
         return 0;
     }
@@ -172,37 +171,15 @@ public:
                   << std::endl;
         assert(f->id_camera >= 0 && f->id_camera < n_cameras);
 
-        // Save frame in buffer
-        buffer[f->id_camera] = f;
+        // Save frame as tensor in buffer
+        buffer[f->id_camera] = featToTensor(f->frame, f->max);
         counter++;
 
         // Buffer full? Process it
         if (counter >= n_cameras) {
-            torch::Tensor t0 = featToTensor(buffer[0]->frame, buffer[0]->max);
-            torch::Tensor max1 = torch::max(t0);
-            std::cout << max1 << std::endl;
-            torch::Tensor min1 = torch::min(t0);
-            std::cout << min1 << std::endl;
-            torch::Tensor t1 = featToTensor(buffer[1]->frame, buffer[1]->max);
-            torch::Tensor t2 = featToTensor(buffer[2]->frame, buffer[2]->max);
-            torch::Tensor t3 = featToTensor(buffer[3]->frame, buffer[3]->max);
-            torch::Tensor t4 = featToTensor(buffer[4]->frame, buffer[4]->max);
-            torch::Tensor t5 = featToTensor(buffer[5]->frame, buffer[5]->max);
-            torch::Tensor t6 = featToTensor(buffer[6]->frame, buffer[6]->max);
-
-            //std::cout << buffer[0]->frame.size() << endl;
-            //for (int k = 0; k < 10; k++)
-            //    printf("%02X", *(f->frame.data + k));
-
-            // Convert Map to Tensor and populate List of Tensors
-            // expected tensor shape: torch.Size([1, 512, 120, 360])
-
-            // ...
 
             // Concatenate list of tensors into one big tensor
-            // torch::Tensor world_features_cat = torch::cat(torch::TensorList(world_features), 1);
-
-            torch::Tensor world_features_cat = torch::cat({t0, t1, t2, t3, t4, t5, t6, coord_tensor}, 1);
+            torch::Tensor world_features_cat = torch::cat(buffer, 1);
 
             // Feed tensor into model
             torch::Tensor view = map_classifier->forward(world_features_cat);
@@ -239,13 +216,10 @@ public:
             // Send out result TODO
             ff_send_out(fr);
 
-            // Free buffer for next round
+            // Next round
             counter = 0;
-            for (int i = 0; i < n_cameras; i++) {
-                delete buffer[i];
-                buffer[i] = nullptr;
-            }
         }
+        delete f;
         return GO_ON;
     }
 };
