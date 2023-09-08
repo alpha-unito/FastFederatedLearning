@@ -33,7 +33,7 @@ cv::Mat tensorToFeat(const torch::Tensor &tensor) {
     float max = tensor.max().item().toFloat();
     float min = tensor.min().item().toFloat();
     torch::Tensor buffer = tensor.squeeze(0).permute({1, 2, 0}).sub(min).mul(255.0 / (max - min)).toType(torch::kByte);
-    return cv::Mat(buffer.size(0), buffer.size(1), CV_8UC(buffer.size(2)), buffer.data_ptr<uchar>());
+    return cv::Mat(buffer.size(0), buffer.size(1), CV_8UC(buffer.size(2)), buffer.data_ptr<uchar>()).clone();
 }
 
 cv::Mat tensorToProjectionMat(const torch::Tensor &tensor) {

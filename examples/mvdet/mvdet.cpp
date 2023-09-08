@@ -97,13 +97,13 @@ public:
             return this->EOS;
         } else {
             // Process frame using base model
-            show_results(frame, "frame");
+            // show_results(frame, "frame");
             torch::Tensor imgTensor = imgToTensor(frame);
-            show_results(imgTensor, "tensor");
+            // show_results(imgTensor, "tensor");
             imgTensor[0][0] = imgTensor[0][0].sub(0.485).div(0.229);
             imgTensor[0][1] = imgTensor[0][1].sub(0.456).div(0.224);
             imgTensor[0][2] = imgTensor[0][2].sub(0.406).div(0.225);
-            show_results(imgTensor, "normalised tensor");
+            // show_results(imgTensor, "normalised tensor");
             torch::Tensor img_feature = base_model->forward({imgTensor});
 
             // Upscaling
@@ -261,7 +261,7 @@ public:
 
     int *svc(Frame *f) {
         std::cout << "Sink recv: square " << f->id_square << " frame " << f->id_frame << std::endl;
-        show_results(f->frame, "control room result");
+        // show_results(f->frame, "control room result");
         std::cout << f->frame.rows << "x" << f->frame.cols << " channels: " << f->frame.channels() << std::endl;
 
         delete f;
