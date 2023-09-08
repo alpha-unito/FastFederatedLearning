@@ -6,132 +6,10 @@
 
 #include "utils/net.hpp"
 #include "helpers.hpp"
+#include "data_stucts.hpp"
 
 using namespace ff;
 
-struct View {
-    View() {}
-
-    explicit View(const uint32_t &s, const uint32_t &f) : id_square{s},
-                                                          id_frame{f} {}
-
-    explicit View(View *t) {
-        id_square = t->id_square;
-        id_frame = t->id_frame;
-    }
-
-    torch::Tensor view;
-    uint32_t id_square;
-    uint32_t id_frame;
-};
-
-struct Frame {
-    Frame() {}
-
-    explicit Frame(const uint32_t &s, const int32_t &c, const uint32_t &f, const uint32_t &row, const uint32_t &col)
-            : id_square{s}, id_camera{c}, id_frame{f}, rows{row}, cols{col} {}
-
-    explicit Frame(const uint32_t &s, const int32_t &c, const uint32_t &f)
-            : id_square{s}, id_camera{c}, id_frame{f}, rows{0}, cols{0} {}
-
-    explicit Frame(const uint32_t &s, const uint32_t &f)
-            : id_square{s}, id_camera{-1}, id_frame{f}, rows{0}, cols{0} {}
-
-    explicit Frame(Frame *t) {
-        id_square = t->id_square;
-        id_camera = t->id_camera;
-        id_frame = t->id_frame;
-        rows = t->rows;
-        cols = t->cols;
-    }
-
-    //template<class Archive>
-    //void serialize(Archive &archive) {
-    //    archive(id_square, id_camera, id_frame, matToBytes(frame));
-    //} //TODO: serialize frame (già come tensore)
-
-    cv::Mat frame;
-    uint32_t id_square;
-    int32_t id_camera;
-    uint32_t id_frame;
-    uint32_t rows;
-    uint32_t cols;
-};
-
-template<class Archive>
-void save(Archive &archive, Frame const &f) {
-    std::ostringstream oss;
-    uint32_t size = f.frame.total() * f.frame.elemSize();
-    uint32_t channels = f.frame.channels();
-
-    oss.write((const char *) &f.id_square, sizeof(f.id_square));
-    oss.write((const char *) &f.id_camera, sizeof(f.id_camera));
-    oss.write((const char *) &f.id_frame, sizeof(f.id_frame));
-    oss.write((const char *) &f.rows, sizeof(f.rows));
-    oss.write((const char *) &f.cols, sizeof(f.cols));
-    oss.write((const char *) &channels, sizeof(channels));
-    oss.write((const char *) &size, sizeof(size));
-    oss.write((const char *) f.frame.data, size);
-    archive(oss.str());
-}
-
-template<class Archive>
-void load(Archive &archive, Frame &f) {
-    std::string oss;
-    archive(oss);
-    std::istringstream iss(oss);
-    uint32_t size;
-    uint32_t channels;
-
-    iss.read((char *) &f.id_square, sizeof(f.id_square));
-    iss.read((char *) &f.id_camera, sizeof(f.id_camera));
-    iss.read((char *) &f.id_frame, sizeof(f.id_frame));
-    iss.read((char *) &f.rows, sizeof(f.rows));
-    iss.read((char *) &f.cols, sizeof(f.cols));
-    iss.read((char *) &channels, sizeof(channels));
-    iss.read((char *) &size, sizeof(size));
-    f.frame = cv::Mat(f.rows, f.cols, CV_8UC(channels)).clone();
-    iss.read((char *) f.frame.data, size);
-}
-
-template<class Archive>
-void save(Archive &archive, View const &f) {
-    std::ostringstream oss;
-
-    oss.write((const char *) &f.id_square, sizeof(f.id_square));
-    oss.write((const char *) &f.id_frame, sizeof(f.id_frame));
-
-    std::ostringstream stream;
-    torch::save(f.view, stream);
-    std::string buffer = stream.str();
-    uint32_t size = buffer.length();
-    oss << size << buffer;
-
-    archive(oss.str());
-}
-
-template<class Archive>
-void load(Archive &archive, View &f) {
-    std::string oss;
-    archive(oss);
-    std::istringstream iss(oss);
-    uint32_t size;
-
-    iss.read((char *) &f.id_square, sizeof(f.id_square));
-    iss.read((char *) &f.id_frame, sizeof(f.id_frame));
-    iss.read((char *) &size, sizeof(size));
-
-    char *buffer = new char[size];
-    iss.read(buffer, size);
-
-    std::string string_buffer(buffer, size);
-    // Creare uno string buffer è necessario perché char* torch load lo interpreta come filename
-    // TODO: fare overloading di torch::load?
-    std::istringstream stream(string_buffer);
-    torch::load(f.view, stream);
-
-    delete buffer;
-}
 
 template<typename T>
 void serializefreetask(T *o, Frame *input) {}
@@ -140,17 +18,17 @@ void serializefreetask(T *o, Frame *input) {}
 struct Source : ff_node_t<int> {
 private:
     int round = -1;
-    int n_tot_cameras;
+    const int n_tot_cameras;
 public:
     Source() = delete;
 
     Source(const int n_tot_cameras) : n_tot_cameras{n_tot_cameras} {}
 
     int *svc(int *i) {
-        //sleep(1);
         round++;
-        std::cout << "Source starting round " << round << std::endl;
+
         // Send wakeup to each camera to process next frame
+        std::cout << "Source starting round " << round << std::endl;
         for (int i = 0; i < n_tot_cameras; i++)
             ff_send_out(new int(round));
 
@@ -161,7 +39,8 @@ public:
 
 struct CameraNode : ff_monode_t<int, Frame> {
 private:
-    int out_node, lid;
+    int out_node;
+    int lid;
     std::string camera_id;
     std::string video_path;
     std::string projection_matrix_path;
@@ -173,7 +52,6 @@ private:
     Net <torch::jit::Module> *base_model;
     Net <torch::jit::Module> *img_classifier;
     Frame *fr;
-
 public:
     CameraNode() = delete;
 
@@ -184,7 +62,6 @@ public:
                                                         out_node{out_node}, lid{lid} {}
 
     int svc_init() {
-        // Load torch  models
         std::cout << "[ Camera " << camera_id << " ] Loading base model (" << base_model_path << ") image classifier ("
                   << image_classifier_path << ") projection matrix (" << projection_matrix_path << std::endl;
 
@@ -203,48 +80,50 @@ public:
 
         // Check if video was found
         if (!cap.isOpened()) {
-            std::cerr << "ERROR! Unable to open camera\n";
+            std::cerr << "ERROR! Unable to open camera" << std::endl;
             return -1;
         }
         return 0;
     }
 
     Frame *svc(int *i) {
-        std::cout << camera_id << " round " << *i << " " << video_path << std::endl;
-
         // Read next frame
+        std::cout << camera_id << " round " << *i << " " << video_path << std::endl;
         cap.read(frame);
+
         if (frame.empty()) {
             std::cout << camera_id << " finished video." << std::endl;
             delete i;
             return this->EOS;
         } else {
             // Process frame using base model
-            //show_results(frame, "frame");
+            show_results(frame, "frame");
             torch::Tensor imgTensor = imgToTensor(frame);
+            show_results(imgTensor, "tensor");
+            imgTensor[0][0] = imgTensor[0][0].sub(0.485).div(0.229);
+            imgTensor[0][1] = imgTensor[0][1].sub(0.456).div(0.224);
+            imgTensor[0][2] = imgTensor[0][2].sub(0.406).div(0.225);
+            show_results(imgTensor, "normalised tensor");
             torch::Tensor img_feature = base_model->forward({imgTensor});
 
             // Upscaling
-            torch::Tensor img_feature_upscaled = torch::nn::functional::interpolate(
-                    img_feature,
-                    torch::nn::functional::InterpolateFuncOptions()
-                            .mode(torch::kBilinear)
-                            .size(std::vector<int64_t>({270, 480}))
-            );
-
+            //torch::Tensor img_feature_upscaled = torch::nn::functional::interpolate(
+            //        img_feature,
+            //        torch::nn::functional::InterpolateFuncOptions()
+            //                .mode(torch::kBilinear)
+            //                .size(std::vector<int64_t>({270, 480}))
+            //);
             // Image classifier
-            torch::Tensor img_res = img_classifier->forward({img_feature_upscaled});
+            //torch::Tensor img_res = img_classifier->forward({img_feature_upscaled});
 
             // Create Frame with buffer for output data
-            fr = new Frame(out_node, lid, *i, 120, 360);
+            torch::Tensor max = torch::max(img_feature);
+            float max_value = max.item<float>();
+            fr = new Frame(out_node, lid, *i, 120, 360, max_value);
 
-            // Warp perspective 
-            cv::Mat img_feature_mat = tensorToFeat(img_feature, 255);
-            //show_results(tensorToFeat(img_feature, 255), "feature_map");
+            // Warp perspective
+            cv::Mat img_feature_mat = tensorToFeat(img_feature);
             cv::warpPerspective(img_feature_mat, fr->frame, perspective_matrix, {360, 120});
-            //show_results(fr->frame, "warp result");
-            //for (int k = 0; k < 10; k++)
-            //    printf("%02X", *(fr->frame.data + k));
 
             // Send it out
             this->ff_send_out_to(fr, out_node);
@@ -275,8 +154,9 @@ public:
 
     // tensors(nullptr, n_cameras)
     AggregatorNode(std::string id, std::string mm, std::string cm, int n_cameras) : id{id}, n_cameras{n_cameras},
-                                                                    buffer(n_cameras, nullptr),
-                                                                    map_classifier_path{mm}, coord_mat_path{cm} {}
+                                                                                    buffer(n_cameras, nullptr),
+                                                                                    map_classifier_path{mm},
+                                                                                    coord_mat_path{cm} {}
 
     int svc_init() {
         map_classifier = new Net<torch::jit::Module>(map_classifier_path);
@@ -298,15 +178,17 @@ public:
 
         // Buffer full? Process it
         if (counter >= n_cameras) {
-            // TODO: Process frame
-
-            torch::Tensor t0 = featToTensor(buffer[0]->frame);
-            torch::Tensor t1 = featToTensor(buffer[1]->frame);
-            torch::Tensor t2 = featToTensor(buffer[2]->frame);
-            torch::Tensor t3 = featToTensor(buffer[3]->frame);
-            torch::Tensor t4 = featToTensor(buffer[4]->frame);
-            torch::Tensor t5 = featToTensor(buffer[5]->frame);
-            torch::Tensor t6 = featToTensor(buffer[6]->frame);
+            torch::Tensor t0 = featToTensor(buffer[0]->frame, buffer[0]->max);
+            torch::Tensor max1 = torch::max(t0);
+            std::cout << max1 << std::endl;
+            torch::Tensor min1 = torch::min(t0);
+            std::cout << min1 << std::endl;
+            torch::Tensor t1 = featToTensor(buffer[1]->frame, buffer[1]->max);
+            torch::Tensor t2 = featToTensor(buffer[2]->frame, buffer[2]->max);
+            torch::Tensor t3 = featToTensor(buffer[3]->frame, buffer[3]->max);
+            torch::Tensor t4 = featToTensor(buffer[4]->frame, buffer[4]->max);
+            torch::Tensor t5 = featToTensor(buffer[5]->frame, buffer[5]->max);
+            torch::Tensor t6 = featToTensor(buffer[6]->frame, buffer[6]->max);
 
             //std::cout << buffer[0]->frame.size() << endl;
             //for (int k = 0; k < 10; k++)
@@ -324,10 +206,35 @@ public:
 
             // Feed tensor into model
             torch::Tensor view = map_classifier->forward(world_features_cat);
+            torch::Tensor max = torch::max(view);
 
-            Frame *fr = new Frame(f->id_square, -1, f->id_frame, 120, 360);
+            //torch::Tensor norm = view.sub(min).div(max.sub(min));
+            //show_results(view, "aggregator result");
 
-            fr->frame = tensorToImg(view, 1);
+
+            //torch::Tensor img_feature_upscaled = torch::nn::functional::interpolate(
+            //        view,
+            //        torch::nn::functional::InterpolateFuncOptions()
+            //                .mode(torch::kBilinear)
+            //                .size(std::vector<int64_t>({120, 360}))
+            //);
+            //torch::Tensor buf = norm.squeeze(0).mul(255.0);
+            //std::cout << buf.sizes() << std::endl;
+
+            //buf = torch::norm(buf, 0);
+            //std::cout << buf.sizes() << std::endl;
+
+            //buf = buf.toType(torch::kByte);
+            //std::cout << buf.sizes() << std::endl;
+
+            //cv::Mat robe = cv::Mat(120, 360, CV_8UC1, buf.data_ptr<uchar>());
+            //std::cout << robe.size() << std::endl;
+            //show_results(robe, "aggregator result");
+
+            Frame *fr = new Frame(f->id_square, -1, f->id_frame, 120, 360, max.item<float>());
+
+            fr->frame = tensorToImg(view, 255.0/max.item<float>());
+            //show_results(fr->frame, "aggregator result");
 
             // Send out result TODO
             ff_send_out(fr);
@@ -354,7 +261,7 @@ public:
 
     int *svc(Frame *f) {
         std::cout << "Sink recv: square " << f->id_square << " frame " << f->id_frame << std::endl;
-        // show_results(f->frame, "control room result");
+        show_results(f->frame, "control room result");
         std::cout << f->frame.rows << "x" << f->frame.cols << " channels: " << f->frame.channels() << std::endl;
 
         delete f;
@@ -387,9 +294,9 @@ int main(int argc, char *argv[]) {
     }
 #endif
     // then this could be std::vector
-    std::size_t ncam{7};
-    std::size_t nsqu{1};
-    std::string image_path = "/mnt/shared/gmittone/FastFederatedLearning/mvdet_data/Image_subsets_test";
+    uint32_t ncam{7};
+    uint32_t nsqu{1};
+    std::string image_path = "/mnt/shared/gmittone/FastFederatedLearning/mvdet_data/Image_subsets_sequencial";
     std::string data_path = "/mnt/shared/gmittone/FastFederatedLearning/mvdet_data";
 
     // Parameters parsing
@@ -399,15 +306,17 @@ int main(int argc, char *argv[]) {
                 std::cout << "Usage: mvdet_ff [num_cameras=7] [num_agg=1] [image_path] [data_path]\n";
             exit(0);
         } else
-            ncam = atoi(argv[1]);
+            ncam = (uint32_t) atoi(argv[1]);
     if (argc >= 3)
-        nsqu = atoi(argv[2]);
+        nsqu = (uint32_t) atoi(argv[2]);
     if (argc >= 4)
         image_path = argv[3];
     if (argc >= 5)
         data_path = argv[4];
     if (groupName.compare(sinkName) == 0)
         std::cout << "Inferencing on " << ncam << " cameras." << std::endl;
+
+    torch::cuda::manual_seed_all(42);
 
     std::size_t ncam_x_nsqu{ncam * nsqu};
 
@@ -418,14 +327,15 @@ int main(int argc, char *argv[]) {
     ff_a2a a2a;
 
     std::vector < AggregatorNode * > secondset;
-    for (int i = 0; i < nsqu; i++) {
+    for (uint32_t i = 0; i < nsqu; i++) {
         std::string id = std::to_string(i + 1);
-        secondset.push_back(new AggregatorNode("A" + id, data_path + "/map_classifier.pt", data_path + "/coord_map.pt", ncam));
+        secondset.push_back(
+                new AggregatorNode("A" + id, data_path + "/map_classifier.pt", data_path + "/coord_map.pt", ncam));
     }
 
     std::vector < CameraNode * > firstset;
-    for (int j = 0; j < nsqu; j++)
-        for (int i = 0; i < ncam; i++) {
+    for (uint32_t j = 0; j < nsqu; j++)
+        for (uint32_t i = 0; i < ncam; i++) {
             std::string rank = std::to_string(i + j);
             std::string id = std::to_string(i + j + 1);
             firstset.push_back(new CameraNode("C" + id, image_path + "/C" + id + "/%08d.png",
