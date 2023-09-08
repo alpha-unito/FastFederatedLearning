@@ -122,7 +122,7 @@ public:
             fr = new Frame(out_node, lid, *i, max_value);
 
             // Warp perspective
-            cv::Mat img_feature_mat = tensorToFeat(img_feature);
+            cv::Mat img_feature_mat = tensorToImg(img_feature);
             cv::warpPerspective(img_feature_mat, fr->frame, perspective_matrix, {360, 120});
 
             // Send it out
@@ -233,7 +233,7 @@ public:
 
             Frame *fr = new Frame(f->id_square, -1, f->id_frame, max);
 
-            fr->frame = tensorToImg(view, 255.0 / max);
+            fr->frame = tensorToImg(view);
             //show_results(fr->frame, "aggregator result");
 
             // Send out result TODO
