@@ -62,25 +62,21 @@ struct Frame {
     int32_t id_camera;
     uint32_t id_square;
     uint32_t id_frame;
-    uint32_t rows;
-    uint32_t cols;
     float max;
 
 
     Frame() {}
 
-    explicit Frame(const uint32_t &s, const int32_t &c, const uint32_t &f, const uint32_t &row, const uint32_t &col,
-                   float max)
-            : id_square{s}, id_camera{c}, id_frame{f}, rows{row}, cols{col}, max{max} {}
+    explicit Frame(const uint32_t &s, const int32_t &c, const uint32_t &f, float max)
+            : id_square{s}, id_camera{c}, id_frame{f}, max{max} {}
 
     explicit Frame(const uint32_t &s, const int32_t &c, const uint32_t &f)
-            : id_square{s}, id_camera{c}, id_frame{f}, rows{0}, cols{0} {}
+            : id_square{s}, id_camera{c}, id_frame{f} {}
 
     explicit Frame(const uint32_t &s, const uint32_t &f)
-            : id_square{s}, id_camera{-1}, id_frame{f}, rows{0}, cols{0} {}
+            : id_square{s}, id_camera{-1}, id_frame{f} {}
 
-    explicit Frame(const Frame *t) : id_square{t->id_square}, id_camera{t->id_camera}, id_frame{t->id_frame},
-                                     rows{t->rows}, cols{t->cols} {}
+    explicit Frame(const Frame *t) : id_square{t->id_square}, id_camera{t->id_camera}, id_frame{t->id_frame} {}
 };
 
 template<class Archive>
@@ -92,8 +88,8 @@ void save(Archive &archive, Frame const &f) {
     oss.write((const char *) &f.id_square, sizeof(f.id_square));
     oss.write((const char *) &f.id_camera, sizeof(f.id_camera));
     oss.write((const char *) &f.id_frame, sizeof(f.id_frame));
-    oss.write((const char *) &f.rows, sizeof(f.rows));
-    oss.write((const char *) &f.cols, sizeof(f.cols));
+    oss.write((const char *) &f.frame.rows, sizeof(f.frame.rows));
+    oss.write((const char *) &f.frame.cols, sizeof(f.frame.cols));
     oss.write((const char *) &channels, sizeof(channels));
     oss.write((const char *) &f.max, sizeof(f.max));
     oss.write((const char *) &size, sizeof(size));
@@ -112,12 +108,12 @@ void load(Archive &archive, Frame &f) {
     iss.read((char *) &f.id_square, sizeof(f.id_square));
     iss.read((char *) &f.id_camera, sizeof(f.id_camera));
     iss.read((char *) &f.id_frame, sizeof(f.id_frame));
-    iss.read((char *) &f.rows, sizeof(f.rows));
-    iss.read((char *) &f.cols, sizeof(f.cols));
+    iss.read((char *) &f.frame.rows, sizeof(f.frame.rows));
+    iss.read((char *) &f.frame.cols, sizeof(f.frame.cols));
     iss.read((char *) &channels, sizeof(channels));
     iss.read((char *) &f.max, sizeof(f.max));
     iss.read((char *) &size, sizeof(size));
-    f.frame = cv::Mat(f.rows, f.cols, CV_8UC(channels)).clone();
+    f.frame = cv::Mat(f.frame.rows, f.frame.cols, CV_8UC(channels)).clone();
     iss.read((char *) f.frame.data, size);
 }
 

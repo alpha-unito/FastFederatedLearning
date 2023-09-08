@@ -97,13 +97,13 @@ public:
             return this->EOS;
         } else {
             // Process frame using base model
-            // show_results(frame, "frame");
+            show_results(frame, "frame");
             torch::Tensor imgTensor = imgToTensor(frame);
-            // show_results(imgTensor, "tensor");
+            show_results(imgTensor, "tensor");
             imgTensor[0][0] = imgTensor[0][0].sub(0.485).div(0.229);
             imgTensor[0][1] = imgTensor[0][1].sub(0.456).div(0.224);
             imgTensor[0][2] = imgTensor[0][2].sub(0.406).div(0.225);
-            // show_results(imgTensor, "normalised tensor");
+            show_results(imgTensor, "normalised tensor");
             torch::Tensor img_feature = base_model->forward({imgTensor});
 
             // Upscaling
@@ -119,7 +119,7 @@ public:
             // Create Frame with buffer for output data
             torch::Tensor max = torch::max(img_feature);
             float max_value = max.item<float>();
-            fr = new Frame(out_node, lid, *i, 120, 360, max_value);
+            fr = new Frame(out_node, lid, *i, max_value);
 
             // Warp perspective
             cv::Mat img_feature_mat = tensorToFeat(img_feature);
@@ -206,7 +206,7 @@ public:
 
             // Feed tensor into model
             torch::Tensor view = map_classifier->forward(world_features_cat);
-            torch::Tensor max = torch::max(view);
+            float max = view.max().item().toFloat();
 
             //torch::Tensor norm = view.sub(min).div(max.sub(min));
             //show_results(view, "aggregator result");
@@ -231,9 +231,9 @@ public:
             //std::cout << robe.size() << std::endl;
             //show_results(robe, "aggregator result");
 
-            Frame *fr = new Frame(f->id_square, -1, f->id_frame, 120, 360, max.item<float>());
+            Frame *fr = new Frame(f->id_square, -1, f->id_frame, max);
 
-            fr->frame = tensorToImg(view, 255.0/max.item<float>());
+            fr->frame = tensorToImg(view, 255.0 / max);
             //show_results(fr->frame, "aggregator result");
 
             // Send out result TODO
