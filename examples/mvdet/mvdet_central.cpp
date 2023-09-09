@@ -239,8 +239,10 @@ public:
 
 struct ControlRoom : ff_node_t<Frame, int> {
 private:
-    int counter = 0;
+    uint64_t counter = 0;
+    uint64_t tot_counter = 0;
     int n_aggregators;
+    std::chrono::steady_clock::time_point start, end;
 public:
     ControlRoom() = delete;
 
@@ -253,13 +255,26 @@ public:
 
         delete f;
         counter++;
+        if(tot_counter == 0) {
+            start = std::chrono::steady_clock::now();
+        }
+        tot_counter++;
 
         // Received all aggragted results? Start new round
         if (counter >= n_aggregators) {
             counter = 0;
             ff_send_out(new int(0));
         }
+        end = std::chrono::steady_clock::now();
         return GO_ON;
+    }
+
+    void svc_end() {
+        if(tot_counter >= 2) {
+            double elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            uint64_t processed_views = tot_counter - 1;
+            std::cout << "[ Control Room ] Processed " << processed_views << " views in " << elapsed_ms/1000.0 << " s ( " << elapsed_ms / 1000.0 /  processed_views << " s/view)" << std::endl;
+        }
     }
 };
 
