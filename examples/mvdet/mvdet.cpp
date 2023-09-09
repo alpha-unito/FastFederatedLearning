@@ -62,17 +62,17 @@ public:
                                                         out_node{out_node}, lid{lid} {}
 
     int svc_init() {
-        std::cout << "[ Camera " << camera_id << " ] Loading base model (" << base_model_path << ") image classifier ("
-                  << image_classifier_path << ") projection matrix (" << projection_matrix_path << std::endl;
-
         // perspective matrix [3x3]
+        std::cout << "[ Camera " << camera_id << " ] Loading projection matrix: " << projection_matrix_path << std::endl;
         torch::jit::script::Module container = torch::jit::load(projection_matrix_path);
         torch::Tensor pm = container.attr("data").toTensor();
         perspective_matrix = tensorToProjectionMat(pm).clone();
 
         // Model loading
+        std::cout << "[ Camera " << camera_id << " ] Loading base model: " << base_model_path << std::endl;
         base_model = new Net<torch::jit::Module>(base_model_path);
-        img_classifier = new Net<torch::jit::Module>(image_classifier_path);
+        // std::cout << "[ Camera " << camera_id << " ] Loading image classifier: " << image_classifier_path << std::endl;
+        // img_classifier = new Net<torch::jit::Module>(image_classifier_path);
 
         // Opening video
         std::cout << "[ Camera " << camera_id << " ] Starting to process video..." << video_path << std::endl;
@@ -88,7 +88,7 @@ public:
 
     Frame *svc(int *i) {
         // Read next frame
-        std::cout << camera_id << " round " << *i << " " << video_path << std::endl;
+        std::cout << "[ Camera " << camera_id << " ] Reading frame " << *i << std::endl;
         cap.read(frame);
 
         if (frame.empty()) {
@@ -158,8 +158,10 @@ public:
                                                                                     coord_mat_path{cm} {}
 
     int svc_init() {
+        std::cout << "[ Aggregator " << id << " ] Loading map classifier: " << map_classifier_path << std::endl;
         map_classifier = new Net<torch::jit::Module>(map_classifier_path);
 
+        std::cout << "[ Aggregator " << id << " ] Loading coord matrix: " << coord_mat_path << std::endl;
         torch::jit::script::Module container = torch::jit::load(coord_mat_path);
         buffer[n_cameras] = container.attr("data").toTensor(); // last element is always coordinates matrix
 
@@ -167,7 +169,7 @@ public:
     }
 
     Frame *svc(Frame *f) {
-        std::cout << id << " recv: square " << f->id_square << " camera " << f->id_camera << " frame " << f->id_frame
+        std::cout << "[ Aggregator " << id << " ] Received square " << f->id_square << " camera " << f->id_camera << " frame " << f->id_frame
                   << std::endl;
         assert(f->id_camera >= 0 && f->id_camera < n_cameras);
 

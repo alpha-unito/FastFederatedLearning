@@ -43,9 +43,6 @@ private:
     int lid;
     std::string camera_id;
     std::string video_path;
-    std::string projection_matrix_path;
-    std::string base_model_path;
-    std::string image_classifier_path;
     cv::VideoCapture cap;
 public:
     CameraNode() = delete;
@@ -55,9 +52,6 @@ public:
                                                         out_node{out_node}, lid{lid} {}
 
     int svc_init() {
-        std::cout << "[ Camera " << camera_id << " ] Loading base model (" << base_model_path << ") image classifier ("
-                  << image_classifier_path << ") projection matrix (" << projection_matrix_path << std::endl;
-
         // Opening video
         std::cout << "[ Camera " << camera_id << " ] Starting to process video..." << video_path << std::endl;
         cap = cv::VideoCapture(video_path);
@@ -72,7 +66,7 @@ public:
 
     Frame *svc(int *i) {
         // Read next frame
-        std::cout << camera_id << " round " << *i << " " << video_path << std::endl;
+        std::cout << "[ Camera " << camera_id << " ] Reading frame " << *i << std::endl;
 
         Frame *fr = new Frame(out_node, lid, *i, 1.0);
         cap.read(fr->frame);
@@ -80,7 +74,7 @@ public:
         delete i;
 
         if (fr->frame.empty()) {
-            std::cout << camera_id << " finished video." << std::endl;
+            std::cout << "[ Camera " << camera_id << " ] Finished video." << std::endl;
             delete fr;
             return this->EOS;
         } else {
@@ -130,20 +124,31 @@ public:
     int svc_init() {
         // perspective matrices for each camera [3x3]
         for(int i = 0; i < n_cameras; i++) {
-            char buf[2048];
-            assert(snprintf(buf, sizeof(buf), projection_matrix_path.c_str(), i) < sizeof(buf));
-            torch::jit::script::Module container = torch::jit::load(buf);
+            int size_s = std::snprintf(nullptr, 0, projection_matrix_path.c_str(), i) + 1; // Extra space for '\0'
+            if(size_s <= 0) {
+                throw std::runtime_error("Error during formatting.");
+            }
+            auto size = static_cast<size_t>(size_s);
+            std::unique_ptr<char[]> buf( new char[ size ] );
+            std::snprintf(buf.get(), size, projection_matrix_path.c_str(), i);
+            std::string path(buf.get(), buf.get() + size - 1);
+            
+            std::cout << "[ Aggregator " << id << " ] Loading projection matrix: " << path << std::endl;
+            torch::jit::script::Module container = torch::jit::load(path);
             torch::Tensor pm = container.attr("data").toTensor();
             perspective_matrices[i] = tensorToProjectionMat(pm).clone();
         }
 
         // Model loading
+        std::cout << "[ Aggregator " << id << " ] Loading base model: " << base_model_path << std::endl;
         base_model = new Net<torch::jit::Module>(base_model_path);
-        img_classifier = new Net<torch::jit::Module>(image_classifier_path);
-        
+        // std::cout << "[ Aggregator " << id << " ] Loading image classifier : " << image_classifier_path << std::endl;
+        // img_classifier = new Net<torch::jit::Module>(image_classifier_path);
+        std::cout << "[ Aggregator " << id << " ] Loading map classifier: " << map_classifier_path << std::endl;
         map_classifier = new Net<torch::jit::Module>(map_classifier_path);
 
         // Last buffer entry contains fixed coordinate matrix
+        std::cout << "[ Aggregator " << id << " ] Loading coord matrix: " << coord_mat_path << std::endl;
         torch::jit::script::Module container = torch::jit::load(coord_mat_path);
         buffer[n_cameras] = container.attr("data").toTensor();
 
@@ -151,7 +156,7 @@ public:
     }
 
     Frame *svc(Frame *f) {
-        std::cout << id << " recv: square " << f->id_square << " camera " << f->id_camera << " frame " << f->id_frame
+        std::cout << "[ Aggregator " << id << " ] Received square " << f->id_square << " camera " << f->id_camera << " frame " << f->id_frame
                   << std::endl;
         assert(f->id_camera >= 0 && f->id_camera < n_cameras);
 
@@ -249,9 +254,9 @@ public:
     ControlRoom(int n_aggregators) : n_aggregators{n_aggregators} {}
 
     int *svc(Frame *f) {
-        std::cout << "Sink recv: square " << f->id_square << " frame " << f->id_frame << std::endl;
+        std::cout << "[ Control Room ] Received new view " << f->id_frame << " from square " << f->id_square << std::endl;
         // show_results(f->frame, "control room result");
-        std::cout << f->frame.rows << "x" << f->frame.cols << " channels: " << f->frame.channels() << std::endl;
+        // std::cout << f->frame.rows << "x" << f->frame.cols << " channels: " << f->frame.channels() << std::endl;
 
         delete f;
         counter++;
