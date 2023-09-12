@@ -126,6 +126,8 @@ public:
             cv::warpPerspective(img_feature_mat, fr->frame, perspective_matrix, {360, 120});
 
             // Send it out
+
+            std::cout << "[ Camera " << camera_id << " ] Sending [ " << fr->frame.rows << " x " << fr->frame.cols << " x " << fr->frame.channels() << " ] ( "<< fr->imgSizeInKBytes() << " KB )" << std::endl;
             this->ff_send_out_to(fr, out_node);
             delete i;
             return this->GO_ON;
@@ -215,7 +217,8 @@ public:
             fr->frame = tensorToImg(view);
             //show_results(fr->frame, "aggregator result");
 
-            // Send out result TODO
+            // Send out result
+            std::cout <<  "[ Aggregator " << id << " ] Sending [ " << fr->frame.rows << " x " << fr->frame.cols << " x " << fr->frame.channels() << " ] ( "<< fr->imgSizeInKBytes() << " KB )" << std::endl;
             ff_send_out(fr);
 
             // Next round

@@ -67,6 +67,10 @@ struct Frame {
 
     Frame() {}
 
+    float imgSizeInKBytes(void) {
+        return frame.step[0] * frame.rows / 1024.0;
+    }
+
     explicit Frame(const uint32_t &s, const int32_t &c, const uint32_t &f, float max)
             : id_square{s}, id_camera{c}, id_frame{f}, max{max} {}
 
