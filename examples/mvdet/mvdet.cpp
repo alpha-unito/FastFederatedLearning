@@ -231,37 +231,63 @@ private:
     uint64_t counter = 0;
     uint64_t tot_counter = 0;
     int n_aggregators;
-    std::chrono::steady_clock::time_point start, end;
+    std::vector<std::chrono::steady_clock::time_point*> starts;
+    std::vector<std::chrono::steady_clock::time_point> ends;
 public:
     ControlRoom() = delete;
 
-    ControlRoom(int n_aggregators) : n_aggregators{n_aggregators} {}
+    ControlRoom(int n_aggregators) : n_aggregators{n_aggregators}, starts(n_aggregators, nullptr), ends(n_aggregators) {}
 
     int *svc(Frame *f) {
-        std::cout << "[ Control Room ] Received new view " << f->id_frame << " from square " << f->id_square << std::endl;
+        std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+        if(starts[f->id_square] == nullptr) {
+            starts[f->id_square] = new std::chrono::steady_clock::time_point(now);
+            std::cout << "[ Control Room ] Received first view " << f->id_frame << " from square " << f->id_square << std::endl;
+        } else {
+            double elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - ends[f->id_square]).count();
+            std::cout << "[ Control Room ] Received new view " << f->id_frame << " from square " << f->id_square << " (processing time " << elapsed_ms/1000.0 << " s)" << std::endl;
+        }
+        ends[f->id_square] = now;
+
+        tot_counter++;
+
         // show_results(f->frame, "control room result");
-        std::cout << f->frame.rows << "x" << f->frame.cols << " channels: " << f->frame.channels() << std::endl;
+        // std::cout << f->frame.rows << "x" << f->frame.col÷s << " channels: " << f->frame.channels() << std::endl;
 
         delete f;
         counter++;
-        if(tot_counter == 0) {
-            start = std::chrono::steady_clock::now();
-        }
-        tot_counter++;
 
         // Received all aggragted results? Start new round
         if (counter >= n_aggregators) {
             counter = 0;
             ff_send_out(new int(0));
         }
-        end = std::chrono::steady_clock::now();
+        
         return GO_ON;
     }
     
     void svc_end() {
         if(tot_counter >= 2) {
+            std::chrono::steady_clock::time_point start;
+            std::chrono::steady_clock::time_point end;
+
+            for(int i; i < n_aggregators; i++) {
+                if(starts[i] != nullptr) {
+                    start = *(starts[i]);
+                    end = ends[i];
+                    break; //TODO better way
+                }
+            }
+
+
+            for(int i; i < n_aggregators; i++) {
+                if(starts[i] != nullptr && *(starts[i]) < start) start = *(starts[i]);
+                if(ends[i] > end) end = ends[i];
+            }
+
             double elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-            uint64_t processed_views = tot_counter - 1; 
+            uint64_t processed_views = tot_counter - 1;
+            
             std::cout << "[ Control Room ] Processed " << processed_views << " views in " << elapsed_ms/1000.0 << " s ( " << elapsed_ms / 1000.0 /  processed_views << " s/view)" << std::endl;
         }
     }
