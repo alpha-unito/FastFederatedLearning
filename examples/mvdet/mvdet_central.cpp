@@ -40,6 +40,7 @@ public:
 struct CameraNode : ff_monode_t<int, Frame> {
 private:
     int out_node;
+    int32_t max_round;
     int lid;
     std::string camera_id;
     std::string video_path;
@@ -48,8 +49,8 @@ public:
     CameraNode() = delete;
 
     CameraNode(std::string camera_id, std::string vp, std::string pm, std::string bm,
-               std::string cm, int lid, int out_node) : camera_id{camera_id}, video_path{vp},
-                                                        out_node{out_node}, lid{lid} {}
+               std::string cm, int lid, int out_node, int32_t max_round) : camera_id{camera_id}, video_path{vp},
+                                                        out_node{out_node}, lid{lid}, max_round{max_round} {}
 
     int svc_init() {
         // Opening video
@@ -73,8 +74,8 @@ public:
 
         delete i;
 
-        if (fr->frame.empty()) {
-            std::cout << "[ Camera " << camera_id << " ] Finished video." << std::endl;
+        if (fr->frame.empty() || (max_round >= 0 && *i > max_round ) {
+            std::cout << "[ Camera " << camera_id << " ] Finished video or reached max round." << std::endl;
             delete fr;
             return this->EOS;
         } else {
@@ -331,6 +332,7 @@ int main(int argc, char *argv[]) {
     // then this could be std::vector
     uint32_t ncam{7};
     uint32_t nsqu{1};
+    int32_t max_round{-1};
     std::string image_path = "/mnt/shared/gmittone/FastFederatedLearning/mvdet_data/Image_subsets_sequencial";
     std::string data_path = "/mnt/shared/gmittone/FastFederatedLearning/mvdet_data";
 
@@ -338,7 +340,7 @@ int main(int argc, char *argv[]) {
     if (argc >= 2)
         if (strcmp(argv[1], "-h") == 0) {
             if (groupName.compare(sinkName) == 0)
-                std::cout << "Usage: mvdet_ff [num_cameras=7] [num_agg=1] [image_path] [data_path]\n";
+                std::cout << "Usage: mvdet_ff [num_cameras=7] [num_agg=1] [image_path] [data_path] [max_round]\n";
             exit(0);
         } else
             ncam = (uint32_t) atoi(argv[1]);
@@ -348,6 +350,8 @@ int main(int argc, char *argv[]) {
         image_path = argv[3];
     if (argc >= 5)
         data_path = argv[4];
+    if (argc >= 6)
+        max_round = argv[5];
     if (groupName.compare(sinkName) == 0)
         std::cout << "Inferencing on " << ncam << " cameras." << std::endl;
 
@@ -379,7 +383,7 @@ int main(int argc, char *argv[]) {
             firstset.push_back(new CameraNode("C" + id, image_path + "/C" + id + "/%08d.png",
                                               data_path + "/proj_mat_cam" + rank + ".pt",
                                               data_path + "/base_model.pt",
-                                              data_path + "/image_classifier.pt", i, j));
+                                              data_path + "/image_classifier.pt", i, j, max_round));
         }
 
     // ---- FastFlow graph -------
