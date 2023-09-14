@@ -326,7 +326,7 @@ int main(int argc, char *argv[]) {
     if (argc >= 2)
         if (strcmp(argv[1], "-h") == 0) {
             if (groupName.compare(sinkName) == 0)
-                std::cout << "Usage: mvdet_ff [num_cameras=7] [num_agg=1] [image_path] [data_path]\n";
+                std::cout << "Usage: mvdet_ff [num_cameras=7] [num_agg=1] [image_path] [data_path] [max_round=-1]\n";
             exit(0);
         } else
             ncam = (uint32_t) atoi(argv[1]);
