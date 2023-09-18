@@ -29,7 +29,7 @@ public:
 
         // Send wakeup to each camera to process next frame
         std::cout << "Source starting round " << round << std::endl;
-        for (int i = 0; i < n_tot_cameras; i++)
+        for (int j = 0; j < n_tot_cameras; j++)
             ff_send_out(new int(round));
 
         if (i < FF_TAG_MIN) delete i;
@@ -57,14 +57,17 @@ public:
     CameraNode() = delete;
 
     CameraNode(std::string camera_id, std::string vp, std::string pm, std::string bm,
-               std::string cm, int lid, int out_node) : camera_id{camera_id}, video_path{vp},
-                                                        projection_matrix_path{pm}, base_model_path{bm},
-                                                        image_classifier_path{cm},
-                                                        out_node{out_node}, lid{lid}, max_round{max_round} {}
+               std::string cm, int lid, int out_node, int32_t max_round) : camera_id{camera_id}, video_path{vp},
+                                                                           projection_matrix_path{pm},
+                                                                           base_model_path{bm},
+                                                                           image_classifier_path{cm},
+                                                                           out_node{out_node}, lid{lid},
+                                                                           max_round{max_round} {}
 
     int svc_init() {
         // perspective matrix [3x3]
-        std::cout << "[ Camera " << camera_id << " ] Loading projection matrix: " << projection_matrix_path << std::endl;
+        std::cout << "[ Camera " << camera_id << " ] Loading projection matrix: " << projection_matrix_path
+                  << std::endl;
         torch::jit::script::Module container = torch::jit::load(projection_matrix_path);
         torch::Tensor pm = container.attr("data").toTensor();
         perspective_matrix = tensorToProjectionMat(pm).clone();
@@ -92,7 +95,7 @@ public:
         std::cout << "[ Camera " << camera_id << " ] Reading frame " << *i << std::endl;
         cap.read(frame);
 
-        if (frame.empty() || (max_round >= 0 && *i > max_round ) {
+        if (frame.empty() || (max_round >= 0 && *i > max_round)) {
             std::cout << camera_id << " finished video." << std::endl;
             delete i;
             return this->EOS;
@@ -128,7 +131,8 @@ public:
 
             // Send it out
 
-            std::cout << "[ Camera " << camera_id << " ] Sending [ " << fr->frame.rows << " x " << fr->frame.cols << " x " << fr->frame.channels() << " ] ( "<< fr->imgSizeInKBytes() << " KB )" << std::endl;
+            std::cout << "[ Camera " << camera_id << " ] Sending [ " << fr->frame.rows << " x " << fr->frame.cols
+                      << " x " << fr->frame.channels() << " ] ( " << fr->imgSizeInKBytes() << " KB )" << std::endl;
             this->ff_send_out_to(fr, out_node);
             delete i;
             return this->GO_ON;
@@ -146,7 +150,7 @@ private:
     int counter = 0;
     int n_cameras;
     std::string id;
-    std::vector<torch::Tensor> buffer;
+    std::vector <torch::Tensor> buffer;
     torch::TensorList tensors;
     std::string map_classifier_path;
     std::string coord_mat_path;
@@ -156,7 +160,7 @@ public:
 
     // tensors(nullptr, n_cameras)
     AggregatorNode(std::string id, std::string mm, std::string cm, int n_cameras) : id{id}, n_cameras{n_cameras},
-                                                                                    buffer(n_cameras+1),
+                                                                                    buffer(n_cameras + 1),
                                                                                     map_classifier_path{mm},
                                                                                     coord_mat_path{cm} {}
 
@@ -172,7 +176,8 @@ public:
     }
 
     Frame *svc(Frame *f) {
-        std::cout << "[ Aggregator " << id << " ] Received square " << f->id_square << " camera " << f->id_camera << " frame " << f->id_frame
+        std::cout << "[ Aggregator " << id << " ] Received square " << f->id_square << " camera " << f->id_camera
+                  << " frame " << f->id_frame
                   << std::endl;
         assert(f->id_camera >= 0 && f->id_camera < n_cameras);
 
@@ -219,7 +224,8 @@ public:
             //show_results(fr->frame, "aggregator result");
 
             // Send out result
-            std::cout <<  "[ Aggregator " << id << " ] Sending [ " << fr->frame.rows << " x " << fr->frame.cols << " x " << fr->frame.channels() << " ] ( "<< fr->imgSizeInKBytes() << " KB )" << std::endl;
+            std::cout << "[ Aggregator " << id << " ] Sending [ " << fr->frame.rows << " x " << fr->frame.cols << " x "
+                      << fr->frame.channels() << " ] ( " << fr->imgSizeInKBytes() << " KB )" << std::endl;
             ff_send_out(fr);
 
             // Next round
@@ -235,21 +241,24 @@ private:
     uint64_t counter = 0;
     uint64_t tot_counter = 0;
     int n_aggregators;
-    std::vector<std::chrono::steady_clock::time_point*> starts;
-    std::vector<std::chrono::steady_clock::time_point> ends;
+    std::vector<std::chrono::steady_clock::time_point *> starts;
+    std::vector <std::chrono::steady_clock::time_point> ends;
 public:
     ControlRoom() = delete;
 
-    ControlRoom(int n_aggregators) : n_aggregators{n_aggregators}, starts(n_aggregators, nullptr), ends(n_aggregators) {}
+    ControlRoom(int n_aggregators) : n_aggregators{n_aggregators}, starts(n_aggregators, nullptr),
+                                     ends(n_aggregators) {}
 
     int *svc(Frame *f) {
         std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-        if(starts[f->id_square] == nullptr) {
+        if (starts[f->id_square] == nullptr) {
             starts[f->id_square] = new std::chrono::steady_clock::time_point(now);
-            std::cout << "[ Control Room ] Received first view " << f->id_frame << " from square " << f->id_square << std::endl;
+            std::cout << "[ Control Room ] Received first view " << f->id_frame << " from square " << f->id_square
+                      << std::endl;
         } else {
             double elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - ends[f->id_square]).count();
-            std::cout << "[ Control Room ] Received new view " << f->id_frame << " from square " << f->id_square << " (processing time " << elapsed_ms/1000.0 << " s)" << std::endl;
+            std::cout << "[ Control Room ] Received new view " << f->id_frame << " from square " << f->id_square
+                      << " (processing time " << elapsed_ms / 1000.0 << " s)" << std::endl;
         }
         ends[f->id_square] = now;
 
@@ -266,33 +275,33 @@ public:
             counter = 0;
             ff_send_out(new int(0));
         }
-        
+
         return GO_ON;
     }
-    
+
     void svc_end() {
-        if(tot_counter >= 2) {
+        if (tot_counter >= 2) {
             std::chrono::steady_clock::time_point start;
             std::chrono::steady_clock::time_point end;
 
-            for(int i; i < n_aggregators; i++) {
-                if(starts[i] != nullptr) {
+            for (int i = 0; i < n_aggregators; i++) {
+                if (starts[i] != nullptr) {
                     start = *(starts[i]);
                     end = ends[i];
                     break; //TODO better way
                 }
             }
 
-
-            for(int i; i < n_aggregators; i++) {
-                if(starts[i] != nullptr && *(starts[i]) < start) start = *(starts[i]);
-                if(ends[i] > end) end = ends[i];
+            for (int i = 0; i < n_aggregators; i++) {
+                if (starts[i] != nullptr && *(starts[i]) < start) start = *(starts[i]);
+                if (ends[i] > end) end = ends[i];
             }
 
             double elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
             uint64_t processed_views = tot_counter - 1;
-            
-            std::cout << "[ Control Room ] Processed " << processed_views << " views in " << elapsed_ms/1000.0 << " s ( " << elapsed_ms / 1000.0 /  processed_views << " s/view)" << std::endl;
+
+            std::cout << "[ Control Room ] Processed " << processed_views << " views in " << elapsed_ms / 1000.0
+                      << " s ( " << elapsed_ms / 1000.0 / processed_views << " s/view)" << std::endl;
         }
     }
 };
@@ -337,7 +346,7 @@ int main(int argc, char *argv[]) {
     if (argc >= 5)
         data_path = argv[4];
     if (argc >= 6)
-        max_round = argv[5];
+        max_round = (int32_t) atoi(argv[5]);
     if (groupName.compare(sinkName) == 0)
         std::cout << "Inferencing on " << ncam << " cameras." << std::endl;
 
