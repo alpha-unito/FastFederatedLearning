@@ -1,18 +1,25 @@
 """
 This class handles the creation of the json configuration file necessary for building a federation with FastFlow
 """
+import constants
+import json
+import utils
+import logging
 
 from typing import List, Dict, Union, Optional
 from custom_types import PathLike, Topology
-import constants
-import json
 
 
-# @TODO: This class is currently static, meaning that no new nodes can be addedd to the configuration
-# @TODO: Implements checks for length when using setters
+# TODO: This class is currently static, meaning that no new nodes can be addedd to the configuration
+# TODO: Implements checks for length when using setters
 
-class FFjson(dict):
-    """Simple class for creating and modelling JSON file formatted for working with FastFlow.
+class JSONGenerator(dict):
+    """Creation of a FFjson JSON object containing all the necessary information for a FastFlow execution."""
+
+    def __init__(self, topology: Topology = constants.MASTER_WORKER,
+                 endpoints: Union[int, List[str], List[Dict[str, str]]] = 2,
+                 commands: Optional[Union[str, List[str]]] = None):
+        """Simple class for creating and modelling JSON file formatted for working with FastFlow.
         This class directly extends the base 'dict' class from Python, so can be treated as a plain dictionary
         with additional features.
 
@@ -30,20 +37,19 @@ class FFjson(dict):
             - single command-line command as str to be assigned to all endpoints;
             - as a list of string, each one to be paired to each device in order.
         :type commands: Optional[Union[str, List[str]]]
-    """
-
-    def __init__(self, topology: Topology = constants.MASTER_WORKER,
-                 endpoints: Union[int, List[str], List[Dict[str, str]]] = 2,
-                 commands: Optional[Union[str, List[str]]] = None):
-        """Creation of a FFjson JSON object containing all the necessary information for a FastFlow execution."""
+        """
         super().__init__()
+        self.logger: logging.Logger = utils.get_logger(self.__class__.__name__)
 
         self.topology: str = topology
-        self[constants.GROUPS]: List[Dict]
+        self.logger.debug("Selected topology: %s", self.topology)
 
+        self[constants.GROUPS]: List[Dict]
         self.create_endpoints(endpoints)
         self.create_commands(commands)
         self.create_names(topology)
+
+        self.logger.info("FastFlow configuration parameters correctly created.")
 
     def create_endpoints(self, endpoints: Union[int, List[str], List[Dict[str, str]]]):
         """Creation of the nodes' description.
@@ -62,6 +68,7 @@ class FFjson(dict):
                 self[constants.GROUPS] = [{constants.ENDPOINT: host} for host in endpoints]
             elif isinstance(endpoints[0], dict):
                 self[constants.GROUPS] = endpoints
+        self.logger.debug("Created endpoints: %s", self[constants.GROUPS])
 
     def create_names(self, topology: str = constants.MASTER_WORKER):
         """Creation of the nodes' names according to FastFow policy.
@@ -84,7 +91,10 @@ class FFjson(dict):
                 entry[constants.NAME] = constants.WORKER(counter)
                 counter += 1
         else:
-            raise ValueError("Topology type not supported: " + str(topology))
+            self.logger.critical("Topology type not supported: %s", topology)
+            raise ValueError("Topology type not supported: %s" + str(topology))
+
+        self.logger.debug("Created FastFlow names: %s", self[constants.GROUPS])
 
     def create_commands(self, commands: Optional[Union[str, List[str]]] = None):
         """Association of the command-line commands to each device.
@@ -102,6 +112,8 @@ class FFjson(dict):
             elif isinstance(commands, list):
                 for entry, cmd in zip(self[constants.GROUPS], commands):
                     entry[constants.PRE_CMD] = cmd
+
+        self.logger.debug("Created pre commands: %s", self[constants.GROUPS])
 
     def get_endpoints(self) -> List[str]:
         """Getter for the endpoints addresses.
@@ -189,8 +201,10 @@ class FFjson(dict):
         :param path: The path where to save the .json file
         :type path: PathLike
         """
+        self.logger.debug("Saving the JSON configuration file to ", path)
         with open(path, "w") as text_file:
             text_file.write(self.get_json())
+        self.logger.info("JSON configuration file saved to %s", path)
 
     def get_clients_number(self) -> int:
         """Return the number of clients involved in the federation.
@@ -211,5 +225,5 @@ if __name__ == '__main__':
     # json_file = FFjson(endpoints=["localhost:8000", "localhost:8001", "localhost:8002", "localhost:8003"],
     # commands = "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3", )
     # print(json_file.get_json())
-    print(FFjson.__doc__)
+    print(JSONGenerator.__doc__)
     quit()

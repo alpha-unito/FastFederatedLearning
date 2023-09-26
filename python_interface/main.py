@@ -51,5 +51,5 @@ config = Configuration(json_path=JSON_PATH, data_path=DATA_PATH, runner_path=DFF
 compiled_model = Model(model).compile(torch.rand(128, 1, 28, 28))
 experiment = Experiment(config, model=compiled_model)
 
-# experiment.kill()
+#experiment.kill()
 experiment.run_experiment()
