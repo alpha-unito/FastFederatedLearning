@@ -6,8 +6,8 @@ import logging.config
 import os
 from typing import Any, get_args
 
-from python_interface.custom.custom_exceptions import MutuallyExclusiveArgumentsException
-from python_interface.custom.custom_types import PathLike
+from custom.custom_exceptions import MutuallyExclusiveArgumentsException
+from custom.custom_types import PathLike
 
 LOGGING_CONFIGURATION = "logging.conf"
 """Path to the logging configuration file"""
