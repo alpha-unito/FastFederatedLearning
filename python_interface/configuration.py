@@ -3,7 +3,7 @@ import constants
 import logging
 import utils
 
-from custom_types import PathLike, Backend, Topology
+from python_interface.custom.custom_types import PathLike, Backend, Topology
 from json_generator import JSONGenerator
 from typing import List, Dict, Union, Optional
 

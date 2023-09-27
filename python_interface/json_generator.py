@@ -7,7 +7,7 @@ import utils
 import logging
 
 from typing import List, Dict, Union, Optional
-from custom_types import PathLike, Topology
+from python_interface.custom.custom_types import PathLike, Topology
 
 
 # TODO: This class is currently static, meaning that no new nodes can be addedd to the configuration
