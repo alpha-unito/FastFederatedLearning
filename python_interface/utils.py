@@ -12,6 +12,12 @@ from custom_types import PathLike
 LOGGING_CONFIGURATION = "logging.conf"
 """Path to the logging configuration file"""
 
+LOGGER_NUMBER = 0
+"""Number of different loggers currently instantiated"""
+
+VERSION = "v0.1.0-alpha"
+"""FastFL software version"""
+
 
 def get_logger(class_name: str = "root") -> logging.Logger:
     """Returns the logger associated to the specified class name.
@@ -20,13 +26,19 @@ def get_logger(class_name: str = "root") -> logging.Logger:
         This way multiple instances of the same class will obtain the same instance of the class logger.
         when a new class is created, a new entry should be inserted in the logging.conf file.
 
-        :param class_name: a string reporting the class name asking for a logger.
-        :type class_name: str
+    :param class_name: a string reporting the class name asking for a logger.
+    :type class_name: str
 
-        :return: Logger object.
-        :rtype: logging.Logger
-        """
+    :return: Logger object.
+    :rtype: logging.Logger
+    """
+    global LOGGER_NUMBER
+    LOGGER_NUMBER += 1
+
     logging.config.fileConfig(LOGGING_CONFIGURATION)
+    if LOGGER_NUMBER == 1:
+        logger = logging.getLogger("root")
+        logger.info("FastFederatedLearning (FastFL) - %s - Starting the execution...", VERSION)
     return logging.getLogger(class_name)
 
 
