@@ -55,7 +55,9 @@ class Experiment:
                                       str(self.json.get_clients_number()),
                                       self.configuration.get_torchscript_path()]
         self.logger.info("Launching the FastFlow backend: %s", dff_run_command)
+        self.logger.info('-' * 80)
         call(dff_run_command)
+        self.logger.info('-' * 80)
         self.logger.info("Experiment completed correctly.")
 
     def kill(self) -> List[int]:
