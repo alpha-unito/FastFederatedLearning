@@ -4,10 +4,10 @@ The model can also be compiled to obtained enhanced computational performance if
 """
 import torch
 import logging
-import utils
 
 from typing import Union
 from torch.jit import ScriptModule
+from python_interface.utils import utils
 
 
 class Model:

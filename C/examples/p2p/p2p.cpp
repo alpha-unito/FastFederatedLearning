@@ -19,11 +19,11 @@
 #include <torch/torch.h>
 #include <torch/script.h>
 
-#include "dfl/federation.hpp"
-#include "dfl/fedavg.hpp"
-#include "utils/net.hpp"
-#include "utils/utils.hpp"
-#include "utils/serialize.hpp"
+#include "C/dfl/federation.hpp"
+#include "C/dfl/fedavg.hpp"
+#include "C/utils/net.hpp"
+#include "C/utils/utils.hpp"
+#include "C/utils/serialize.hpp"
 
 using namespace ff;
 

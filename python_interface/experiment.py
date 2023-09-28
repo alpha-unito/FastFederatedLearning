@@ -3,14 +3,14 @@ Class responsible for organizing, running, and eventually shutting down, the fed
 """
 import torch
 import logging
-import utils
 
-from torch.jit import ScriptModule, save
-from configuration import Configuration
-from json_generator import JSONGenerator
+from torch.jit import ScriptModule
 from subprocess import call
 from pssh.clients.ssh.parallel import ParallelSSHClient
 from typing import List
+from python_interface.configuration import Configuration
+from python_interface.json_generator import JSONGenerator
+from python_interface.utils import utils
 
 
 class Experiment:
@@ -67,6 +67,7 @@ class Experiment:
         :return: list of the exit codes received by the contacted hosts.
         :rtype: List[int]
         """
+        self.logger.info("Killing all FastFL jobs on the following hosts: %s", self.json.get_hosts())
         client = ParallelSSHClient(self.json.get_hosts())
         output = client.run_command('pkill -f -9 FastFederatedLearning')
 

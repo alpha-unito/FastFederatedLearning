@@ -1,14 +1,12 @@
-import constants
-from configuration import Configuration
-from experiment import Experiment
-from model import Model
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-import torchvision
 import logging
+
+from python_interface.utils import constants
+from python_interface.configuration import Configuration
+from python_interface.experiment import Experiment
+from python_interface.model import Model
 
 logging.basicConfig(level=logging.DEBUG)
 

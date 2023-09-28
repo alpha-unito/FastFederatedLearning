@@ -1,19 +1,11 @@
 """General configuration of the FastFederatedLearning runtime."""
-import constants
 import logging
-import utils
 
-from custom.custom_types import PathLike, Backend, Topology
-from json_generator import JSONGenerator
+from python_interface.custom.custom_types import PathLike
+from python_interface.utils.constants import Backend, Topology
+from python_interface.json_generator import JSONGenerator
+from python_interface.utils import constants, utils
 from typing import List, Dict, Union, Optional
-
-# TODO: make paths more flexible
-FFL_DIR = "/mnt/shared/gmittone/FastFederatedLearning/"
-"""FastFederatedLearning root directory"""
-EXECUTABLE_PATH_MS = FFL_DIR + "build/examples/masterworker/masterworker_dist"
-"""Master-Worker executable path"""
-EXECUTABLE_PATH_P2P = FFL_DIR + "build/examples/p2p/p2p_dist"
-"""Peer-to-Peer executable path"""
 
 
 class Configuration(dict):
@@ -183,6 +175,7 @@ class Configuration(dict):
         :type executable_path: Optional[PathLike]
         :param topology: type of topology chosen.
         :type topology: Optional[Topology]
+        :raises: ValueError
         """
         utils.check_mutually_exclusive_args(executable_path, topology, self.logger)
         if executable_path is not None:
@@ -191,9 +184,19 @@ class Configuration(dict):
             self["executable_path"]: PathLike = executable_path
         else:  # TODO: Make this choice extendible in the future with user-defined topologies
             utils.check_var_in_literal(topology, Topology, self.logger)
-            self.logger.info("Setting the FastFlow executable path to %s", executable_path)
-            self["executable_path"]: PathLike = \
-                EXECUTABLE_PATH_MS if topology == constants.MASTER_WORKER else EXECUTABLE_PATH_P2P
+            self.logger.info("Setting the FastFlow executable to %s", topology)
+            self["executable_path"]: PathLike = None
+            match topology:
+                case constants.MASTER_WORKER:
+                    self["executable_path"] = constants.EXECUTABLE_PATH_MS
+                case constants.PEER_TO_PEER:
+                    self["executable_path"] = constants.EXECUTABLE_PATH_P2P
+                case constants.EDGE_INFERENCE:
+                    self["executable_path"] = constants.EXECUTABLE_PATH_EI
+                case constants.MVDET:
+                    self["executable_path"] = constants.EXECUTABLE_PATH_MVDET
+                case _:
+                    raise ValueError("Value " + str(topology) + " is not in the admitted topologies: " + str(Topology))
 
     def set_torchscript_path(self, torchscript_path: PathLike):
         """Set the TorchScript model path.

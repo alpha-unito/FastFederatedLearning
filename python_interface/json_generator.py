@@ -1,13 +1,13 @@
 """
 This class handles the creation of the json configuration file necessary for building a federation with FastFlow
 """
-import constants
 import json
-import utils
 import logging
 
 from typing import List, Dict, Union, Optional
-from custom.custom_types import PathLike, Topology
+from python_interface.custom.custom_types import PathLike
+from python_interface.utils.constants import Topology
+from python_interface.utils import utils, constants
 
 
 # TODO: This class is currently static, meaning that no new nodes can be addedd to the configuration
