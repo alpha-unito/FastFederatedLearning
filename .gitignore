@@ -35,5 +35,5 @@
 libs
 data
 build
-python_interface/.idea/
 /mvdet_data/
+/python_interface/.idea/

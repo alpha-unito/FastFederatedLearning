@@ -35,8 +35,8 @@ class Experiment:
         """Experiment start-up.
         Saves the TorchScript model and the JSON configuration file, and then calls the C/C++ backend executable.
         """
-        self.logger.info("Saving TorchScript model to: %s", self.configuration.get_torchscript_path())
-        torch.jit.save(self.model, self.configuration.get_torchscript_path())
+        self.logger.info("Saving TorchScript model to: %s", self.model.get_torchscript_path())
+        torch.jit.save(self.model, self.model.get_torchscript_path())
 
         self.logger.info("Creating JSON configuration file to: %s", self.configuration.get_json_path())
         self.json.generate_json_file(self.configuration.get_json_path())
@@ -53,7 +53,7 @@ class Experiment:
                                       str(self.configuration.get_epochs()),
                                       self.configuration.get_data_path(),
                                       str(self.json.get_clients_number()),
-                                      self.configuration.get_torchscript_path()]
+                                      self.model.get_torchscript_path()]
         self.logger.info("Launching the FastFlow backend: %s", dff_run_command)
         self.logger.info('-' * 80)
         call(dff_run_command)

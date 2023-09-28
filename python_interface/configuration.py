@@ -12,7 +12,7 @@ class Configuration(dict):
     """General configuration of the FastFederatedLearning runtime."""
 
     def __init__(self, json_path: PathLike, data_path: PathLike, runner_path: PathLike,
-                 torchscript_path: PathLike, topology: Topology = constants.MASTER_WORKER,
+                 topology: Topology = constants.MASTER_WORKER,
                  endpoints: Union[int, List[str], List[Dict[str, str]]] = 2,
                  commands: Optional[Union[str, List[str]]] = None, backend: Backend = constants.TCP,
                  force_cpu: bool = True, rounds: int = 1, epochs: int = 1):
@@ -25,8 +25,6 @@ class Configuration(dict):
         :type data_path: PathLike
         :param runner_path: path of the FastFlow executable file (masterworker or p2p).
         :type runner_path: PathLike
-        :param torchscript_path: path of the TorchScript model.
-        :type torchscript_path: PathLike
         :param topology: type of topology for the experiment (masterworker or p2p).
         :type topology: Topology
         :param endpoints: number or list of hosts to add to the federation.
@@ -52,7 +50,6 @@ class Configuration(dict):
         self.set_data_path(data_path=data_path)
         self.set_runner_path(runner_path=runner_path)
         self.set_executable_path(topology=topology)
-        self.set_torchscript_path(torchscript_path=torchscript_path)
         self.set_backend(backend=backend)
         self.set_force_cpu(force_cpu=force_cpu)
         self.set_rounds(rounds=rounds)
@@ -89,14 +86,6 @@ class Configuration(dict):
         :rtype: PathLike
         """
         return self["executable_path"]
-
-    def get_torchscript_path(self) -> PathLike:
-        """Get the TorchScript model path.
-
-        :return: the TorchScript model path
-        :rtype: PathLike
-        """
-        return self["torchscript_path"]
 
     def get_backend(self) -> str:
         """Get the chosen backend.
@@ -197,16 +186,6 @@ class Configuration(dict):
                     self["executable_path"] = constants.EXECUTABLE_PATH_MVDET
                 case _:
                     raise ValueError("Value " + str(topology) + " is not in the admitted topologies: " + str(Topology))
-
-    def set_torchscript_path(self, torchscript_path: PathLike):
-        """Set the TorchScript model path.
-
-        :param torchscript_path: TorchScript model path.
-        :type torchscript_path: PathLike
-        """
-        utils.check_and_create_path(torchscript_path, "torchscript_path", self.logger)
-        self.logger.info("Setting the TorchScript model path to %s", torchscript_path)
-        self["torchscript_path"]: PathLike = torchscript_path
 
     def set_backend(self, backend: Backend):
         """Set the communication backend.
