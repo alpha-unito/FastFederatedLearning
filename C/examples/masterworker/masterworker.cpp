@@ -60,15 +60,15 @@ int main(int argc, char *argv[]) {
     DFF_Init(argc, argv);
 #endif
 
-    int num_workers{3};                // Number of workers
-    int train_batchsize{64};          // Train batch size
-    int test_batchsize{64};          // Test batch size
-    int train_epochs{2};               // Number of training epochs at workers in each round
-    int rounds{10};                    // Number of training rounds
-    char *data_path;  // Patch to the MNISt data files (absolute or with respect to build directory)
-    int forcecpu{0};
-    int nt{4}; // Number of threads per process
-    char *inmodel;
+    int num_workers{3};         // Number of workers
+    int train_batchsize{64};    // Train batch size
+    int test_batchsize{64};     // Test batch size
+    int train_epochs{2};        // Number of training epochs at workers in each round
+    int rounds{10};             // Number of training rounds
+    int forcecpu{0};            // Force the execution on the CPU
+    int nt{4};                  // Number of threads per process
+    char *data_path;            // Patch to the MNISt data files (absolute or with respect to build directory)
+    char *inmodel;              // Path to a TorchScript representation of a DNN
 
     if (argc >= 2) {
         if (strcmp(argv[1], "-h") == 0) {
@@ -113,7 +113,6 @@ int main(int argc, char *argv[]) {
             torch::data::transforms::Stack<>());
     //.map(torch::data::transforms::Normalize<>(0.1307, 0.3081))
 
-
     ff_a2a a2a;
 
     if (groupName.compare(federatorName) == 0)
@@ -122,11 +121,8 @@ int main(int argc, char *argv[]) {
     std::vector < ff_node * > w;
     for (int i = 0; i < num_workers; ++i) {
         Net <torch::jit::Module> *net = new Net<torch::jit::Module>(inmodel);
+        auto optimizer = std::make_shared<torch::optim::Adam>(net->parameters(), torch::optim::AdamOptions(0.001));
 
-        auto optimizer = std::make_shared<torch::optim::Adam>(net->parameters(),
-                                                              torch::optim::AdamOptions(0.001));
-
-        // HACK: in sampler set total number of nodes to 8 subdivide always the data in 8 partitions
         ff_node *worker = new ff_comb(new MiNodeAdapter<StateDict>,
                                       new Worker(i, net, net->state_dict(), train_epochs, optimizer,
                                                  torch::data::make_data_loader(train_dataset,
@@ -162,12 +158,11 @@ int main(int argc, char *argv[]) {
 #else
     ff::ff_pipeline pipe;
     pipe.add_stage(&a2a);
-    pipe.wrap_around();  // for distributed memory version
-    pipe.run_and_wait_end(); // for distributed memory version
+    pipe.wrap_around();
+    pipe.run_and_wait_end();
 #endif
 
     if (groupName.compare(federatorName) == 0)
         chrono.stop();
-
     return 0;
 }

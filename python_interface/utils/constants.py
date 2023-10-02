@@ -62,8 +62,11 @@ GROUPS: Final[LiteralString] = "groups"
 FEDERATOR: Final[LiteralString] = "Federator"
 """Server name for the FastFlow json format"""
 
-WORKER: Callable[[int], LiteralString] = lambda rank: "W" + str(rank)
-"""Function for determining the workers names in the FastFlow json format"""
+WORKER_W: Callable[[int], LiteralString] = lambda rank: "W" + str(rank)
+"""Function for determining the workers names in the FastFlow json format (master-worker, peer-to-peer)"""
+
+WORKER_G: Callable[[int], LiteralString] = lambda rank: "G" + str(rank)
+"""Function for determining the workers names in the FastFlow json format (edge inference)"""
 
 # Backend constants #
 TCP: Final[LiteralString] = "TCP"

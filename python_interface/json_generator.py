@@ -83,16 +83,21 @@ class JSONGenerator(dict):
                 if counter == -1:
                     entry[constants.NAME] = constants.FEDERATOR
                 else:
-                    entry[constants.NAME] = constants.WORKER(counter)
+                    entry[constants.NAME] = constants.WORKER_W(counter)
                 counter += 1
         elif topology == constants.PEER_TO_PEER:
             counter: int = 0
             for entry in self[constants.GROUPS]:
-                entry[constants.NAME] = constants.WORKER(counter)
+                entry[constants.NAME] = constants.WORKER_W(counter)
+                counter += 1
+        elif topology == constants.EDGE_INFERENCE:
+            counter: int = 0
+            for entry in self[constants.GROUPS]:
+                entry[constants.NAME] = constants.WORKER_G(counter)
                 counter += 1
         else:
             self.logger.critical("Topology type not supported: %s", topology)
-            raise ValueError("Topology type not supported: %s" + str(topology))
+            raise ValueError("Topology type not supported: " + str(topology))
 
         self.logger.debug("Created FastFlow names: %s", self[constants.GROUPS])
 
@@ -206,7 +211,7 @@ class JSONGenerator(dict):
             text_file.write(self.get_json())
         self.logger.info("JSON configuration file saved to %s", path)
 
-    def get_clients_number(self) -> int:
+    def get_clients_number(self) -> Optional[int]:
         """Return the number of clients involved in the federation.
 
         :return: Number of clients involved in the federation.
