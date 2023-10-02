@@ -11,12 +11,14 @@ from typing import List
 from python_interface.configuration import Configuration
 from python_interface.json_generator import JSONGenerator
 from python_interface.utils import utils
+from python_interface.model import Model
+from python_interface.dataset import Dataset
 
 
 class Experiment:
     """Object handling the experiment"""
 
-    def __init__(self, configuration: Configuration, model: ScriptModule):
+    def __init__(self, configuration: Configuration, model: Model, dataset: Dataset):
         """Object serving as interface for handling the Federated Learning experiment.
 
         :param configuration: a federation configuration file.
@@ -27,7 +29,8 @@ class Experiment:
         self.logger: logging.Logger = utils.get_logger(self.__class__.__name__)
         self.configuration: Configuration = configuration
         self.json: JSONGenerator = self.configuration.get_json()
-        self.model: ScriptModule = model
+        self.model: ScriptModule = model.compile()
+        self.dataset: Dataset = dataset
 
         self.logger.info("Experiment set up correctly.")
 
@@ -51,7 +54,7 @@ class Experiment:
                                       str(int(self.configuration.get_force_cpu())),
                                       str(self.configuration.get_rounds()),
                                       str(self.configuration.get_epochs()),
-                                      self.configuration.get_data_path(),
+                                      self.dataset.get_data_path(),
                                       str(self.json.get_clients_number()),
                                       self.model.get_torchscript_path()]
         self.logger.info("Launching the FastFlow backend: %s", dff_run_command)

@@ -7,16 +7,19 @@ from python_interface.utils import constants
 from python_interface.configuration import Configuration
 from python_interface.experiment import Experiment
 from python_interface.model import Model
+from python_interface.dataset import Dataset
 
 logging.basicConfig(level=logging.DEBUG)
 
 FFL_DIR = "/mnt/shared/gmittone/FastFederatedLearning/"
 SUFFIX = ""
 
+# TODO: remove these two string
 JSON_PATH = FFL_DIR + "workspace/config" + SUFFIX + ".json"
+TORCHSCRIPT_PATH = FFL_DIR + "workspace/model" + SUFFIX + ".pt"
+
 DFF_RUN_PATH = FFL_DIR + "libs/fastflow/ff/distributed/loader/dff_run"
 DATA_PATH = FFL_DIR + "data/edge_inference"
-TORCHSCRIPT_PATH = FFL_DIR + "workspace/model" + SUFFIX + ".pt"
 
 
 class Net(nn.Module):
@@ -36,18 +39,18 @@ class Net(nn.Module):
 
 # model = torchvision.models.resnet18(num_classes=10)
 # model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-model = Net()
 
-config = Configuration(json_path=JSON_PATH, data_path=DATA_PATH, runner_path=DFF_RUN_PATH,
-                       torchscript_path=TORCHSCRIPT_PATH, backend=constants.TCP, force_cpu=True, rounds=1, epochs=1,
+config = Configuration(json_path=JSON_PATH, runner_path=DFF_RUN_PATH,
+                       backend=constants.TCP, force_cpu=True, rounds=1, epochs=1,
                        endpoints=["small-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
                        # + ["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 10)]
                        # + ["medium-" + str(rank) + ":800" + str(rank) for rank in range(10, 21)]
                        # + ["large-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
                        , topology=constants.EDGE_INFERENCE)
 
-compiled_model = Model(model) #.compile(torch.rand(128, 1, 28, 28))
-experiment = Experiment(config, model=compiled_model)
+model = Model(Net(), torch.rand(128, 1, 28, 28), optimize=False)
+dataset = Dataset(DATA_PATH)
+experiment = Experiment(config, model=model, dataset=dataset)
 
-#experiment.kill()
+# experiment.kill()
 experiment.run_experiment()

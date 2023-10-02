@@ -11,8 +11,7 @@ from typing import List, Dict, Union, Optional
 class Configuration(dict):
     """General configuration of the FastFederatedLearning runtime."""
 
-    def __init__(self, json_path: PathLike, data_path: PathLike, runner_path: PathLike,
-                 topology: Topology = constants.MASTER_WORKER,
+    def __init__(self, json_path: PathLike, runner_path: PathLike, topology: Topology = constants.MASTER_WORKER,
                  endpoints: Union[int, List[str], List[Dict[str, str]]] = 2,
                  commands: Optional[Union[str, List[str]]] = None, backend: Backend = constants.TCP,
                  force_cpu: bool = True, rounds: int = 1, epochs: int = 1):
@@ -21,8 +20,6 @@ class Configuration(dict):
 
         :param json_path: path of the JSON configuration file.
         :type json_path: PathLike
-        :param data_path: path of the dataset.
-        :type data_path: PathLike
         :param runner_path: path of the FastFlow executable file (masterworker or p2p).
         :type runner_path: PathLike
         :param topology: type of topology for the experiment (masterworker or p2p).
@@ -47,7 +44,6 @@ class Configuration(dict):
         self.json: JSONGenerator = JSONGenerator(topology=topology, endpoints=endpoints, commands=commands)
 
         self.set_json_path(json_path=json_path)
-        self.set_data_path(data_path=data_path)
         self.set_runner_path(runner_path=runner_path)
         self.set_executable_path(topology=topology)
         self.set_backend(backend=backend)
@@ -62,14 +58,6 @@ class Configuration(dict):
         :rtype: PathLike
         """
         return self["json_path"]
-
-    def get_data_path(self) -> PathLike:
-        """Get the dataset path.
-
-        :return: the dataset path
-        :rtype: PathLike
-        """
-        return self["data_path"]
 
     def get_runner_path(self) -> PathLike:
         """Get the DFF_run executable path.
@@ -136,16 +124,6 @@ class Configuration(dict):
         utils.check_and_create_path(json_path, "json_path", self.logger)
         self.logger.info("Setting the JSON config file path to %s", json_path)
         self["json_path"]: PathLike = json_path
-
-    def set_data_path(self, data_path: PathLike):
-        """Set the dataset path.
-
-        :param data_path: dataset path.
-        :type data_path: PathLike
-        """
-        utils.check_and_create_path(data_path, "data_path", self.logger)
-        self.logger.info("Setting the dataset path to %s", data_path)
-        self["data_path"]: PathLike = data_path
 
     def set_runner_path(self, runner_path: PathLike):
         """Set the DFF_run path.
