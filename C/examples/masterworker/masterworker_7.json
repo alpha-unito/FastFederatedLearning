@@ -1,44 +1,44 @@
 {
    "groups" : [
-      {   
+     {
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8000",
-         "name" : "Federator"
+       "name": "W0"
       },
-      {   
+     {
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8001",
-         "name" : "W0"
+       "name": "W1"
       },
-      {   
+     {
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8002",
-         "name" : "W1"
+       "name": "W2"
       },
-      {   
+     {
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8003",
-         "name" : "W2"
+       "name": "W3"
       },
-      {   
+     {
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8004",
-         "name" : "W3"
+       "name": "W4"
       },
-      {   
+     {
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8005",
-         "name" : "W4"
+       "name": "W5"
       },
-      {   
+     {
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8006",
-         "name" : "W5"
+       "name": "W6"
       },
-      {   
+     {
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8007",
-         "name" : "W6"
+       "name": "W7"
       }
    ]
 }

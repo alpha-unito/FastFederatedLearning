@@ -170,11 +170,22 @@ struct level0Gatherer : ff_minode_t<edgeMsg_t> {
 int main(int argc, char *argv[]) {
     timer chrono = timer("Total execution time");
 
+    std::string groupName = "W0";
+    std::string loggerName = "W0";
+
 #ifndef DISABLE_FF_DISTRIBUTED
-    DFF_Init(argc, argv);
+    for (int i = 0; i < argc; i++)
+        if (strstr(argv[i], "--DFF_GName") != NULL) {
+            char *equalPosition = strchr(argv[i], '=');
+            groupName = std::string(++equalPosition);
+            break;
+        }
+    if (DFF_Init(argc, argv) < 0) {
+        error("Error while executing: DFF_Init\n");
+        return -1;
+    }
 #endif
 
-    long ntasks = 100;
     size_t nL = 3;
     size_t pL = 1; // 1 client per group
     int forcecpu = 0;
@@ -183,7 +194,9 @@ int main(int argc, char *argv[]) {
 
     if (argc >= 2) {
         if (strcmp(argv[1], "-h") == 0) {
-            std::cout << "Usage: edgeinference[forcecpu=0/1] [groups=3] [clients/group=1] [model_path] [data_path]\n";
+            if (groupName.compare(loggerName) == 0)
+                std::cout
+                        << "Usage: edgeinference [forcecpu=0/1] [groups=3] [clients/group=1] [model_path] [data_path]\n";
             exit(0);
         } else
             forcecpu = atoi(argv[1]);
@@ -225,35 +238,46 @@ int main(int argc, char *argv[]) {
         return -1;
     } //else infile=std::string(argv[2]);
 
-    ff_a2a mainA2A;
+    ff_a2a a2a;
     level0Gatherer root;
     std::vector < ff_node * > globalLeft;
 
     for (size_t i = 0; i < nL; ++i) {
         ff_pipeline *pipe = new ff_pipeline;   // <---- To be removed and automatically added
-        ff_a2a *a2a = new ff_a2a;
-        pipe->add_stage(a2a, true);
+        ff_a2a *local_a2a = new ff_a2a;
+        pipe->add_stage(local_a2a, true);
         std::vector < ff_node * > localLeft;
         for (size_t j = 0; j < pL; ++j)
             localLeft.push_back(new EdgeNode("W(" + std::to_string(i) + "," + std::to_string(j) + ")", model, infile));
-        a2a->add_firstset(localLeft, 0, true);
-        a2a->add_secondset<ff_comb>({new ff_comb(new level1Gatherer, new HelperNode, true, true)});
+        local_a2a->add_firstset(localLeft, 0, true);
+        local_a2a->add_secondset<ff_comb>({new ff_comb(new level1Gatherer, new HelperNode, true, true)});
         globalLeft.push_back(pipe);
         // create here Gi groups for each a2a(i) i>0
-        auto g = mainA2A.createGroup("G" + std::to_string(i + 1));
+        auto g = a2a.createGroup("W" + std::to_string(i + 1));
         g << pipe;
     }
 
-    mainA2A.add_firstset(globalLeft, true);
-    mainA2A.add_secondset<ff_node>({&root});
+    a2a.add_firstset(globalLeft, true);
+    a2a.add_secondset<ff_node>({&root});
+    a2a.createGroup("W0") << root;
 
-    mainA2A.createGroup("G0") << root;
-
-    if (mainA2A.run_and_wait_end() < 0) {
-        error("running the main All-to-All\n");
+#ifdef DISABLE_FF_DISTRIBUTED
+    a2a.wrap_around();
+    if (a2a.run_and_wait_end() < 0) {
+        error("Error while executing: All-to-All\n");
         return -1;
     }
+#else
+    ff::ff_pipeline pipe;
+    pipe.add_stage(&a2a);
+    pipe.wrap_around();
+    if (pipe.run_and_wait_end() < 0) {
+        error("Error while executing: Pipe\n");
+        return -1;
+    }
+#endif
 
-    chrono.stop();
+    if (groupName.compare(loggerName) == 0)
+        chrono.stop();
     return 0;
 }

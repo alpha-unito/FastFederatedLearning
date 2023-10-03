@@ -1,6 +1,7 @@
 """Constants useful for not using string all over the place"""
 
 from typing import Final, Callable, LiteralString, Tuple, Literal
+
 from python_interface.custom.custom_types import PathLike
 
 # Version #
@@ -59,14 +60,8 @@ NAME: Final[LiteralString] = "name"
 GROUPS: Final[LiteralString] = "groups"
 """group field name of the FastFlow json format"""
 
-FEDERATOR: Final[LiteralString] = "Federator"
-"""Server name for the FastFlow json format"""
-
-WORKER_W: Callable[[int], LiteralString] = lambda rank: "W" + str(rank)
-"""Function for determining the workers names in the FastFlow json format (master-worker, peer-to-peer)"""
-
-WORKER_G: Callable[[int], LiteralString] = lambda rank: "G" + str(rank)
-"""Function for determining the workers names in the FastFlow json format (edge inference)"""
+WORKER: Callable[[int], LiteralString] = lambda rank: "W" + str(rank)
+"""Function for determining the workers names in the FastFlow json format"""
 
 # Backend constants #
 TCP: Final[LiteralString] = "TCP"

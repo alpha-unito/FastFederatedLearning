@@ -3,11 +3,11 @@ This class handles the creation of the json configuration file necessary for bui
 """
 import json
 import logging
-
 from typing import List, Dict, Union, Optional
+
 from python_interface.custom.custom_types import PathLike
-from python_interface.utils.constants import Topology
 from python_interface.utils import utils, constants
+from python_interface.utils.constants import Topology
 
 
 # TODO: This class is currently static, meaning that no new nodes can be addedd to the configuration
@@ -77,29 +77,17 @@ class JSONGenerator(dict):
             Actual choices are constant.MASTER_WORKER and constant.PEER_TO_PEER.
         :type topology: str
         """
-        if topology == constants.MASTER_WORKER:
-            counter: int = -1
-            for entry in self[constants.GROUPS]:
-                if counter == -1:
-                    entry[constants.NAME] = constants.FEDERATOR
-                else:
-                    entry[constants.NAME] = constants.WORKER_W(counter)
-                counter += 1
-        elif topology == constants.PEER_TO_PEER:
-            counter: int = 0
-            for entry in self[constants.GROUPS]:
-                entry[constants.NAME] = constants.WORKER_W(counter)
-                counter += 1
-        elif topology == constants.EDGE_INFERENCE:
-            counter: int = 0
-            for entry in self[constants.GROUPS]:
-                entry[constants.NAME] = constants.WORKER_G(counter)
-                counter += 1
-        else:
+        try:
+            utils.check_var_in_literal(topology, constants.Topology)
+        except ValueError as e:
             self.logger.critical("Topology type not supported: %s", topology)
-            raise ValueError("Topology type not supported: " + str(topology))
-
-        self.logger.debug("Created FastFlow names: %s", self[constants.GROUPS])
+            raise e
+        else:
+            counter: int = 0
+            for entry in self[constants.GROUPS]:
+                entry[constants.NAME] = constants.WORKER(counter)
+                counter += 1
+            self.logger.debug("Created FastFlow names: %s", self[constants.GROUPS])
 
     def create_commands(self, commands: Optional[Union[str, List[str]]] = None):
         """Association of the command-line commands to each device.

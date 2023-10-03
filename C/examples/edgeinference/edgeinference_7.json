@@ -3,42 +3,42 @@
       {   
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8000",
-         "name" : "G0"
+         "name": "W0"
       },
       {   
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8001",
-         "name" : "G1"
+         "name": "W1"
       },
       {   
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8002",
-         "name" : "G2"
+         "name": "W2"
       },
       {   
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8003",
-         "name" : "G3"
+         "name": "W3"
       },
       {   
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8004",
-         "name" : "G4"
+         "name": "W4"
       },
       {   
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8005",
-         "name" : "G5"
+         "name": "W5"
       },
       {   
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8006",
-         "name" : "G6"
+         "name": "W6"
       },
       {   
          "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
          "endpoint" : "localhost:8007",
-         "name" : "G7"
+         "name": "W7"
       }
    ]
 }

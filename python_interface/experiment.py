@@ -1,18 +1,19 @@
 """
 Class responsible for organizing, running, and eventually shutting down, the federation.
 """
-import torch
 import logging
-
-from torch.jit import ScriptModule
 from subprocess import call
-from pssh.clients.ssh.parallel import ParallelSSHClient
 from typing import List
+
+import torch
+from pssh.clients.ssh.parallel import ParallelSSHClient
+from torch.jit import ScriptModule
+
 from python_interface.configuration import Configuration
-from python_interface.json_generator import JSONGenerator
-from python_interface.utils import utils
-from python_interface.model import Model
 from python_interface.dataset import Dataset
+from python_interface.json_generator import JSONGenerator
+from python_interface.model import Model
+from python_interface.utils import utils
 
 
 class Experiment:
@@ -29,7 +30,7 @@ class Experiment:
         self.logger: logging.Logger = utils.get_logger(self.__class__.__name__)
         self.configuration: Configuration = configuration
         self.json: JSONGenerator = self.configuration.get_json()
-        self.model: ScriptModule = model.compile()
+        self.model: Model = model
         self.dataset: Dataset = dataset
 
         self.logger.info("Experiment set up correctly.")
@@ -39,7 +40,8 @@ class Experiment:
         Saves the TorchScript model and the JSON configuration file, and then calls the C/C++ backend executable.
         """
         self.logger.info("Saving TorchScript model to: %s", self.model.get_torchscript_path())
-        torch.jit.save(self.model, self.model.get_torchscript_path())
+        torch.jit.save(self.model.compile(),
+                       self.model.get_torchscript_path())  # TODO: Questo dovrebbe essere fatto in Model
 
         self.logger.info("Creating JSON configuration file to: %s", self.configuration.get_json_path())
         self.json.generate_json_file(self.configuration.get_json_path())
