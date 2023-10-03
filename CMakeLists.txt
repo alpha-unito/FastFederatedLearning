@@ -28,9 +28,7 @@ include_directories(${CEREAL_DIR})
 find_package(Torch REQUIRED)
 find_package(OpenCV REQUIRED core highgui videoio) # TODO if not found OpenCV then exclude edgeinference
 
-
 find_package(MPI)
-
 if (NOT MPI_FOUND)
     message("DFF excluding MPI")
     add_compile_definitions(DFF_EXCLUDE_MPI)

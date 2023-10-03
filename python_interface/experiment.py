@@ -40,8 +40,9 @@ class Experiment:
         Saves the TorchScript model and the JSON configuration file, and then calls the C/C++ backend executable.
         """
         self.logger.info("Saving TorchScript model to: %s", self.model.get_torchscript_path())
-        torch.jit.save(self.model.compile(),
-                       self.model.get_torchscript_path())  # TODO: Questo dovrebbe essere fatto in Model
+        if not self.model.already_exists():
+            torch.jit.save(self.model.compile(),
+                           self.model.get_torchscript_path())  # TODO: Questo dovrebbe essere fatto in Model
 
         self.logger.info("Creating JSON configuration file to: %s", self.configuration.get_json_path())
         self.json.generate_json_file(self.configuration.get_json_path())

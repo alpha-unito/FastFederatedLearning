@@ -5,15 +5,15 @@ This class also offers methods for data splitting.
 """
 import logging
 
-from python_interface.utils import utils
 from python_interface.custom.custom_types import PathLike
+from python_interface.utils import utils
 
 
 class Dataset():
     """Wrapper for a generic dataset"""
 
     def __init__(self, data_path: PathLike):
-        """Class that wrapsa generic dataset provided by the user and allows to split it across different clients.
+        """Class that wraps generic dataset provided by the user and allows to split it across different clients.
 
         :param data_path: a generic dataset.
         :type data_path:

@@ -4,21 +4,24 @@ Wrapper class for a PyTorch model.
 This class compiles the PyTorch model into a TorchScript object that can then be passed to the C/C++ backend.
 The model can also be compiled to obtained enhanced computational performance if possible.
 """
-import torch
 import logging
+import os
+from typing import Union, Optional
 
-from typing import Union, Dict, Optional
+import torch
 from torch.jit import ScriptModule
-from python_interface.utils import utils
-from python_interface.custom.custom_types import PathLike
+
 from python_interface.custom.custom_exceptions import WronglySpecifiedArgumentException
+from python_interface.custom.custom_types import PathLike
+from python_interface.utils import utils
 
 
 class Model:
     """Wrapper for a PyTorch model"""
 
     # TODO: make torchscript check automatic
-    def __init__(self, model: Union[torch.nn.Module, torch.jit.ScriptModule], example: Optional[torch.Tensor] = None,
+    def __init__(self, model: Optional[Union[torch.nn.Module, torch.jit.ScriptModule]] = None,
+                 example: Optional[torch.Tensor] = None,
                  is_torchscript: bool = False, optimize: bool = True, torchscript_path: Optional[PathLike] = None):
         """Class that wraps the PyTorch model provided by the user and translates it into a TorchScript model.
 
@@ -34,17 +37,20 @@ class Model:
         :type torchscript_path: Optional[PathLike]
         """
         self.logger: logging.Logger = utils.get_logger(self.__class__.__name__)
-        self.model: Union[torch.nn.Module, torch.jit.ScriptModule] = model
+        self.model: Optional[Union[torch.nn.Module, torch.jit.ScriptModule]] = model
         self.example: Optional[torch.Tensor] = example
         self.is_torchscript: bool = is_torchscript
         self.optimize: bool = optimize
         self.torchscript_path: Optional[PathLike] = None
+
+        self.exists: bool = False
 
         try:
             self.check_torchscript_example()
         except WronglySpecifiedArgumentException as e:
             self.logger.critical(e.message)
 
+        self.check_torchscript_no_model()
         self.set_torchscript_path(torchscript_path)
 
         self.logger.info("Pytorch model created successfully.")
@@ -100,3 +106,15 @@ class Model:
             if self.example is None:
                 raise WronglySpecifiedArgumentException(
                     "An example tensor has not been specified even if the provided model is not a TorchScprit object.")
+
+    def check_torchscript_no_model(self):
+        """Utility method for checking if the model is already saved in a TorchScript format.
+
+        :raises: WronglySpecifiedArgumentException
+        """
+        if self.is_torchscript and self.torchscript_path is not None and self.model is None:
+            if os.path.exists(self.torchscript_path):
+                self.logger.info("The specified model path is correct - model found.")
+                self.exists = True
+            else:
+                self.logger.critical("The specified model path is not correct - model not found.")

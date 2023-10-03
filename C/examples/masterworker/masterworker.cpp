@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     timer chrono = timer("Total execution time");
 
     std::string groupName = "W0";
-    std::string loggerName = "W0";
+    const std::string loggerName = "W0";
 
 #ifndef DISABLE_FF_DISTRIBUTED
     for (int i = 0; i < argc; i++)
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     int rounds{10};             // Number of training rounds
     int forcecpu{0};            // Force the execution on the CPU
     int nt{4};                  // Number of threads per process
-    char *data_path;            // Patch to the MNISt data files (absolute or with respect to build directory)
+    char *data_path;            // Patch to the dataset (absolute or with respect to build directory)
     char *inmodel;              // Path to a TorchScript representation of a DNN
 
     if (argc >= 2) {

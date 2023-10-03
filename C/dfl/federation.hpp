@@ -1,5 +1,6 @@
-#include <ff/ff.hpp>
 #include <iostream>
+#include <ff/ff.hpp>
+
 #include "C/dfl/traintest.hpp"
 #include "C/utils/utils.hpp"
 

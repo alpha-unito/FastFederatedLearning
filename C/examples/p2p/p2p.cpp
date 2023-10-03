@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     timer chrono = timer("Total execution time");
 
     std::string groupName = "W0";
-    std::string loggerName = "W0";
+    const std::string loggerName = "W0";
 
 #ifndef DISABLE_FF_DISTRIBUTED
     for (int i = 0; i < argc; i++)
@@ -60,13 +60,13 @@ int main(int argc, char *argv[]) {
     int train_epochs{2};            // Number of training epochs at workers in each round
     int rounds{10};                 // Number of training rounds
     int forcecpu{0};                // Force the execution on the CPU
-    char *data_path;                // Patch to the MNIST data files (absolute or with respect to build directory)
+    char *data_path;                // Patch to the dataset (absolute or with respect to build directory)
     char *inmodel;                  // Path to a TorchScript representation of a DNN
 
     if (argc >= 2) {
         if (strcmp(argv[1], "-h") == 0) {
             if (groupName.compare(loggerName) == 0)
-                std::cout << "Usage: mnist [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path]\n";
+                std::cout << "Usage: p2p [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path]\n";
             exit(0);
         } else
             forcecpu = atoi(argv[1]);

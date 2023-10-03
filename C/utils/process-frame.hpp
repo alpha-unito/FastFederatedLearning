@@ -19,33 +19,33 @@ const int IB = 3;  // index of bottom coordinate in tensor
 
 namespace cereal {
 
-    template <class Archive, class T>
-    void save(Archive& ar, const cv::Point_<T>& point) {
+    template<class Archive, class T>
+    void save(Archive &ar, const cv::Point_ <T> &point) {
         ar << point.x << point.y;
     }
 
-    template <class Archive, class T>
-    void load(Archive& ar, cv::Point_<T>& point) {
+    template<class Archive, class T>
+    void load(Archive &ar, cv::Point_ <T> &point) {
         ar >> point.x >> point.y;
     }
 }  // namespace cereal
 
 class BboxInfo {
-    public:
-        cv::Point p1;
-        cv::Point p2;
-        BboxInfo() {}
+public:
+    cv::Point p1;
+    cv::Point p2;
 
-        BboxInfo(const cv::Point& x1, const cv::Point& x2): p1(x1), p2(x2) {}
+    BboxInfo() {}
 
-        BboxInfo(const BboxInfo& b) : p1(b.p1), p2(b.p2) {}
-        
-        template<class Archive>
-	    void serialize(Archive & archive) {
-		    archive(p1,p2);
-	    }
+    BboxInfo(const cv::Point &x1, const cv::Point &x2) : p1(x1), p2(x2) {}
+
+    BboxInfo(const BboxInfo &b) : p1(b.p1), p2(b.p2) {}
+
+    template<class Archive>
+    void serialize(Archive &archive) {
+        archive(p1, p2);
+    }
 };
-
 
 
 //  // Algorithm man down properties:
@@ -55,20 +55,20 @@ extern const float RATIO_THRESH;
 extern bool isMandown;
 
 
-inline float left(const torch::Tensor& x) {
-  return x[IL].item().toFloat();
+inline float left(const torch::Tensor &x) {
+    return x[IL].item().toFloat();
 }
 
-inline float right(const torch::Tensor& x) {
-  return x[IR].item().toFloat();
+inline float right(const torch::Tensor &x) {
+    return x[IR].item().toFloat();
 }
 
-inline float top(const torch::Tensor& x) {
-  return x[IT].item().toFloat();
+inline float top(const torch::Tensor &x) {
+    return x[IT].item().toFloat();
 }
 
-inline float bottom(const torch::Tensor& x) {
-  return x[IB].item().toFloat();
+inline float bottom(const torch::Tensor &x) {
+    return x[IB].item().toFloat();
 }
 
 // Computes the areas of overlap between the best current bbox (found in position indexes[0]) and the rest of the bboxes.
@@ -96,15 +96,15 @@ torch::Tensor compute_overlaps(torch::Tensor dets, torch::Tensor indexes);
 torch::Tensor non_max_suppression(torch::Tensor preds, float score_thresh, float iou_thresh);
 
 // Converts a video frame into a tensor that can be used as input to the model.
-torch::Tensor imgToTensor(const cv::Mat& frame);
+torch::Tensor imgToTensor(const cv::Mat &frame);
 
-void show_results(const cv::Mat &frame, const std::vector<BboxInfo>& bboxes);
+void show_results(const cv::Mat &frame, const std::vector <BboxInfo> &bboxes);
 
-std::vector<BboxInfo> compute_bboxes(const cv::Mat &frame, const torch::Tensor& dets);
+std::vector <BboxInfo> compute_bboxes(const cv::Mat &frame, const torch::Tensor &dets);
 
 bool man_down(const BboxInfo bbox);
 
-void process_results(std::vector<BboxInfo>& results);
+void process_results(std::vector <BboxInfo> &results);
 
 // Process the given video using the YOLOv5 model.
-void process_video(torch::jit::script::Module& model, std::string video_fname, bool show_video);
+void process_video(torch::jit::script::Module &model, std::string video_fname, bool show_video);

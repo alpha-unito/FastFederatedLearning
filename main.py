@@ -1,6 +1,5 @@
 import logging
 
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -17,10 +16,12 @@ SUFFIX = ""
 
 # TODO: remove these two string
 JSON_PATH = FFL_DIR + "workspace/config" + SUFFIX + ".json"
-TORCHSCRIPT_PATH = FFL_DIR + "workspace/model" + SUFFIX + ".pt"
+# TORCHSCRIPT_PATH = FFL_DIR + "workspace/model" + SUFFIX + ".pt"
+TORCHSCRIPT_PATH = FFL_DIR + "data/yolov5n.torchscript"
 
 DFF_RUN_PATH = FFL_DIR + "libs/fastflow/ff/distributed/loader/dff_run"
-DATA_PATH = FFL_DIR + "data/"
+# DATA_PATH = FFL_DIR + "data/"
+DATA_PATH = FFL_DIR + "data/Ranger_Roll_m.mp4"
 
 
 class Net(nn.Module):
@@ -47,9 +48,10 @@ config = Configuration(json_path=JSON_PATH, runner_path=DFF_RUN_PATH,
                        # + ["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 10)]
                        # + ["medium-" + str(rank) + ":800" + str(rank) for rank in range(10, 21)]
                        # + ["large-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
-                       , topology=constants.PEER_TO_PEER)
+                       , topology=constants.EDGE_INFERENCE)
 
-model = Model(Net(), torch.rand(128, 1, 28, 28), optimize=False, torchscript_path=TORCHSCRIPT_PATH)
+# model = Model(Net(), torch.rand(128, 1, 28, 28), optimize=False, torchscript_path=TORCHSCRIPT_PATH)
+model = Model(torchscript_path=TORCHSCRIPT_PATH, is_torchscript=True)
 dataset = Dataset(DATA_PATH)
 experiment = Experiment(config, model=model, dataset=dataset)
 

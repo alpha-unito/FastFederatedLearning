@@ -60,6 +60,10 @@ public: // TODO: add clone method/constructor
         return module.forward({x}).toTensor();
     }
 
+    torch::IValue forward_val(torch::Tensor x) {
+        return module.forward({x});
+    }
+
     void train(bool on = true) {
         module.train(on);
     }
