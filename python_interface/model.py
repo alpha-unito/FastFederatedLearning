@@ -41,16 +41,15 @@ class Model:
         self.example: Optional[torch.Tensor] = example
         self.is_torchscript: bool = is_torchscript
         self.optimize: bool = optimize
-        self.torchscript_path: Optional[PathLike] = None
+        self.torchscript_path: Optional[PathLike] = torchscript_path
 
         self.exists: bool = False
 
         try:
             self.check_torchscript_example()
+            self.check_torchscript_no_model()
         except WronglySpecifiedArgumentException as e:
             self.logger.critical(e.message)
-
-        self.check_torchscript_no_model()
         self.set_torchscript_path(torchscript_path)
 
         self.logger.info("Pytorch model created successfully.")
@@ -72,6 +71,14 @@ class Model:
         utils.check_and_create_path(torchscript_path, "torchscript_path", self.logger)
         self.logger.info("Setting the TorchScript model path to %s", torchscript_path)
         self.torchscript_path: PathLike = torchscript_path
+
+    def already_exists(self) -> bool:
+        """Returns True if the TorchScript file exists already.
+
+        :return: True if the TorchScript file exists already.
+        :rtype: bool
+        """
+        return self.exists
 
     def compile(self) -> ScriptModule:
         """Compilation of a PyTorch model into a TorchScript object.
@@ -113,8 +120,9 @@ class Model:
         :raises: WronglySpecifiedArgumentException
         """
         if self.is_torchscript and self.torchscript_path is not None and self.model is None:
+            self.logger.debug("Checking if the TorchSCript path exists...")
             if os.path.exists(self.torchscript_path):
                 self.logger.info("The specified model path is correct - model found.")
                 self.exists = True
             else:
-                self.logger.critical("The specified model path is not correct - model not found.")
+                raise WronglySpecifiedArgumentException("The specified model path is not correct - model not found.")

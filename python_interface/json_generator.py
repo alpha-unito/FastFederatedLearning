@@ -194,7 +194,7 @@ class JSONGenerator(dict):
         :param path: The path where to save the .json file
         :type path: PathLike
         """
-        self.logger.debug("Saving the JSON configuration file to %s", path)
+        self.logger.info("Creating JSON configuration file and saving it to: %s", path)
         with open(path, "w") as text_file:
             text_file.write(self.get_json())
         self.logger.info("JSON configuration file saved to %s", path)
@@ -206,10 +206,11 @@ class JSONGenerator(dict):
         :rtype: int
         """
         clients = None
-        if self.topology == constants.MASTER_WORKER:
-            clients = len(self[constants.GROUPS]) - 1
-        elif self.topology == constants.PEER_TO_PEER:
-            clients = len(self[constants.GROUPS])
+        match self.topology:
+            case constants.MASTER_WORKER:
+                clients = len(self[constants.GROUPS]) - 1
+            case constants.PEER_TO_PEER | constants.EDGE_INFERENCE:
+                clients = len(self[constants.GROUPS])
 
         return clients
 

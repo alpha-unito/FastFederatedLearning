@@ -1,11 +1,11 @@
 """General configuration of the FastFederatedLearning runtime."""
 import logging
+from typing import List, Dict, Union, Optional
 
 from python_interface.custom.custom_types import PathLike
-from python_interface.utils.constants import Backend, Topology
 from python_interface.json_generator import JSONGenerator
 from python_interface.utils import constants, utils
-from typing import List, Dict, Union, Optional
+from python_interface.utils.constants import Backend, Topology
 
 
 class Configuration(dict):
@@ -74,6 +74,14 @@ class Configuration(dict):
         :rtype: PathLike
         """
         return self["executable_path"]
+
+    def get_topology(self) -> Topology:
+        """Get the chosen experiment topology.
+
+        :return: the chosen experiment topology.
+        :rtype: Topology
+        """
+        return self["topology"]
 
     def get_backend(self) -> str:
         """Get the chosen backend.
@@ -144,8 +152,9 @@ class Configuration(dict):
         :type topology: Optional[Topology]
         :raises: ValueError
         """
-        utils.check_mutually_exclusive_args(executable_path, topology, self.logger)
-        if executable_path is not None:
+        # utils.check_mutually_exclusive_args(executable_path, topology, self.logger)
+        self["topology"]: Topology = topology
+        if executable_path is not None:  # TODO: add support for inputing custom executable paths
             utils.check_and_create_path(executable_path, "executable_path", self.logger)
             self.logger.info("Setting the FastFlow executable path to %s", executable_path)
             self["executable_path"]: PathLike = executable_path

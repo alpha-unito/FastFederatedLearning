@@ -18,7 +18,7 @@ EXECUTABLE_PATH_MS: Final[PathLike] = FFL_DIR + "build/C/examples/masterworker/m
 EXECUTABLE_PATH_P2P: Final[PathLike] = FFL_DIR + "build/C/examples/p2p/p2p_dist"
 """Peer-to-Peer executable path"""
 
-EXECUTABLE_PATH_EI: Final[PathLike] = FFL_DIR + "build/C/examples/edgeinference/edgeinference"
+EXECUTABLE_PATH_EI: Final[PathLike] = FFL_DIR + "build/C/examples/edgeinference/edgeinference_dist"
 """Basic edge-inference executable path"""
 
 EXECUTABLE_PATH_MVDET: Final[PathLike] = FFL_DIR + "build/C/examples/mvdet/mvdet"

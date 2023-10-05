@@ -66,7 +66,8 @@ int main(int argc, char *argv[]) {
     if (argc >= 2) {
         if (strcmp(argv[1], "-h") == 0) {
             if (groupName.compare(loggerName) == 0)
-                std::cout << "Usage: p2p [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path]\n";
+                std::cout
+                        << "Usage: p2p [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path] [num_workers] [model_path]\n";
             exit(0);
         } else
             forcecpu = atoi(argv[1]);

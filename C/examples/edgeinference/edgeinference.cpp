@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
         if (strstr(argv[i], "--DFF_GName") != NULL) {
             char *equalPosition = strchr(argv[i], '=');
             groupName = std::string(++equalPosition);
-            break;
+            continue;
         }
     if (DFF_Init(argc, argv) < 0) {
         error("Error while executing: DFF_Init\n");
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     if (argc >= 3)
         data_path = argv[2];
     if (argc >= 4)
-        num_workers = atoi(argv[2]);
+        num_workers = atoi(argv[3]);
     if (argc >= 5)
         num_groups = atoi(argv[4]);
     if (argc >= 6)
