@@ -33,7 +33,7 @@ private:
 
 public: // TODO: add clone method/constructor
     Net() : module(NULL) {} //TODO: rendere possibile la creazione di una rete anche non da torchscript
-    Net(std::string& model_path) : state_dict_data(nullptr) {
+    Net(std::string &model_path) : state_dict_data(nullptr) {
         try {
             module = torch::jit::load(model_path.c_str());
         } catch (const c10::Error &e) {
@@ -43,6 +43,7 @@ public: // TODO: add clone method/constructor
             exit(EXIT_FAILURE);
         }
     }
+
     Net(const char *model_path) : state_dict_data(nullptr) {
         try {
             module = torch::jit::load(model_path);
@@ -103,25 +104,3 @@ public: // TODO: add clone method/constructor
 };
 
 #endif //FASTFEDERATEDLEARNING_NET_HPP
-
-// Define a new Module.
-//struct Net : torch::nn::Module {
-//    Net() {
-// // Construct and register two Linear submodules.
-//        fc1 = register_module("fc1", torch::nn::Linear(784, 64));
-//        fc2 = register_module("fc2", torch::nn::Linear(64, 32));
-//        fc3 = register_module("fc3", torch::nn::Linear(32, 10));
-//    }
-
-// Implement the Net's algorithm.
-//    torch::Tensor forward(torch::Tensor x) {
-//        // Use one of many tensor manipulation functions.
-//        x = torch::relu(fc1->forward(x.reshape({x.size(0), 784})));
-//        x = torch::relu(fc2->forward(x));
-//        x = torch::log_softmax(fc3->forward(x), /*dim=*/1);
-//        return x;
-//    }
-
-// Use one of many "standard library" modules.
-//    torch::nn::Linear fc1{nullptr}, fc2{nullptr}, fc3{nullptr};
-//};

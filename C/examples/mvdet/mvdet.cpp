@@ -1,19 +1,20 @@
-#include <ff/dff.hpp>
-#include <torch/torch.h>
-#include <opencv2/opencv.hpp>
 #include <filesystem>
 #include <cstdint>
 
+#include <ff/dff.hpp>
+#include <torch/torch.h>
+#include <opencv2/opencv.hpp>
+
 #include "C/utils/net.hpp"
+#include "C/utils/utils.hpp"
+
 #include "helpers.hpp"
 #include "data_stucts.hpp"
 
 using namespace ff;
 
-
 template<typename T>
 void serializefreetask(T *o, Frame *input) {}
-
 
 struct Source : ff_node_t<int> {
 private:
@@ -307,11 +308,12 @@ public:
 };
 
 int main(int argc, char *argv[]) {
+    timer chrono = timer("Total execution time");
+
     std::string groupName = "S0";
-    std::string sinkName = "S0";
+    const std::string loggerName = "S0"; // TODO: il nome del logger non è standard
 
 #ifndef DISABLE_FF_DISTRIBUTED
-    // distributed RTS init ------
     for (int i = 0; i < argc; i++)
         if (strstr(argv[i], "--DFF_GName") != NULL) {
             char *equalPosition = strchr(argv[i], '=');
@@ -319,57 +321,75 @@ int main(int argc, char *argv[]) {
             continue;
         }
     if (DFF_Init(argc, argv) < 0) {
-        error("DFF_Init\n");
+        error("Error while executing: DFF_Init\n");
         return -1;
     }
 #endif
-    // then this could be std::vector
-    uint32_t ncam{7};
-    uint32_t nsqu{1};
-    int32_t max_round{-1};
 
-    std::string image_path = "/mnt/shared/gmittone/FastFederatedLearning/mvdet_data/Image_subsets_sequencial";
-    std::string data_path = "/mnt/shared/gmittone/FastFederatedLearning/mvdet_data";
+    int ncam{7};                // Number of cameras
+    int nsqu{1};                // Number of squares (also servers)
+    int max_round{-1};          // Number of rounds
+    int forcecpu{0};            // Force the execution on the CPU
+    std::string data_path;      // Path to the data folder (absolute or with respect to build directory)
+    std::string image_path;    // Path to the data folder (absolute or with respect to build directory)
 
-    // Parameters parsing
-    if (argc >= 2)
+    if (argc >= 2) {
         if (strcmp(argv[1], "-h") == 0) {
-            if (groupName.compare(sinkName) == 0)
-                std::cout << "Usage: mvdet_ff [num_cameras=7] [num_agg=1] [image_path] [data_path] [max_round=-1]\n";
+            if (groupName.compare(loggerName) == 0)
+                std::cout
+                        << "Usage: mvdet_dist [forcecpu=0/1] [num_cameras=7] [num_agg=1] [image_path] [data_path] [max_round=-1]\n";
             exit(0);
         } else
-            ncam = (uint32_t) atoi(argv[1]);
+            forcecpu = atoi(argv[1]);
+    }
     if (argc >= 3)
-        nsqu = (uint32_t) atoi(argv[2]);
+        ncam = atoi(argv[2]);
     if (argc >= 4)
-        image_path = argv[3];
+        nsqu = atoi(argv[3]);
     if (argc >= 5)
-        data_path = argv[4];
+        image_path = argv[4];
     if (argc >= 6)
-        max_round = (int32_t) atoi(argv[5]);
-    if (groupName.compare(sinkName) == 0)
+        data_path = argv[5];
+    if (argc >= 7)
+        max_round = (int32_t) atoi(argv[6]);
+    if (groupName.compare(loggerName) == 0)
         std::cout << "Inferencing on " << ncam << " cameras." << std::endl;
 
+    torch::DeviceType device_type;
+    if (torch::cuda::is_available() && !forcecpu) {
+        if (groupName.compare(loggerName) == 0)
+            std::cout << "CUDA available! Training on GPU." << std::endl;
+        device_type = torch::kCUDA;
+    } else {
+        if (groupName.compare(loggerName) == 0)
+            std::cout << "Training on CPU." << std::endl;
+        device_type = torch::kCPU;
+    }
+    torch::Device device(device_type);
     torch::cuda::manual_seed_all(42);
 
-    std::size_t ncam_x_nsqu{ncam * nsqu};
+    if (groupName.compare(loggerName) == 0)
+        std::cout << "Checking data existence..." << std::endl;
+    if (!std::filesystem::exists(image_path)) {
+        error("Video file cannot be found at path: %s\n", image_path);
+        return -1;
+    }
 
-    // ---- FastFlow components creation -------
+    if (groupName.compare(loggerName) == 0)
+        std::cout << "Cameras creation..." << std::endl;
+    int ncam_x_nsqu = ncam * nsqu;
     Source source(ncam_x_nsqu);
     ControlRoom controlRoom(nsqu);
-    ff_pipeline pipe;
     ff_a2a a2a;
-
     std::vector < AggregatorNode * > secondset;
-    for (uint32_t i = 0; i < nsqu; i++) {
+    std::vector < CameraNode * > firstset;
+    for (int i = 0; i < nsqu; ++i) {
         std::string id = std::to_string(i + 1);
         secondset.push_back(
                 new AggregatorNode("A" + id, data_path + "/map_classifier.pt", data_path + "/coord_map.pt", ncam));
     }
-
-    std::vector < CameraNode * > firstset;
-    for (uint32_t j = 0; j < nsqu; j++)
-        for (uint32_t i = 0; i < ncam; i++) {
+    for (int j = 0; j < nsqu; ++j)
+        for (int i = 0; i < ncam; ++i) {
             std::string rank = std::to_string(i + j);
             std::string id = std::to_string(i + j + 1);
             firstset.push_back(new CameraNode("C" + id, image_path + "/C" + id + "/%08d.png",
@@ -377,16 +397,6 @@ int main(int argc, char *argv[]) {
                                               data_path + "/base_model.pt",
                                               data_path + "/image_classifier.pt", i, j, max_round));
         }
-
-    // ---- FastFlow graph -------
-    a2a.add_firstset<CameraNode>(firstset);
-    a2a.add_secondset<AggregatorNode>(secondset);
-    pipe.add_stage(&source);
-    pipe.add_stage(&a2a);
-    pipe.add_stage(&controlRoom);
-    pipe.wrap_around();
-
-    // --- distributed groups ----
     source.createGroup("S0");
     for (int i = 0; i < ncam_x_nsqu; i++) {
         std::string id = std::to_string(i + 1);
@@ -397,10 +407,29 @@ int main(int argc, char *argv[]) {
         a2a.createGroup("A" + id) << secondset[i];
     }
     controlRoom.createGroup("S8");
+    a2a.add_firstset<CameraNode>(firstset);
+    a2a.add_secondset<AggregatorNode>(secondset);
 
-    if (pipe.run_and_wait_end() < 0) {
-        error("running the main pipe\n");
+
+#ifdef DISABLE_FF_DISTRIBUTED
+    a2a.wrap_around();
+    if (a2a.run_and_wait_end() < 0) {
+        error("Error while executing: All-to-All\n");
         return -1;
     }
+#else
+    ff_pipeline pipe;
+    pipe.add_stage(&source);
+    pipe.add_stage(&a2a);
+    pipe.add_stage(&controlRoom);
+    pipe.wrap_around();
+    if (pipe.run_and_wait_end() < 0) {
+        error("Error while executing: Pipe\n");
+        return -1;
+    }
+#endif
+
+    if (groupName.compare(loggerName) == 0)
+        chrono.stop();
     return 0;
 }

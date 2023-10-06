@@ -39,10 +39,14 @@
 #include <torch/torch.h>
 
 #include "C/utils/net.hpp"
+#include "C/utils/utils.hpp"
 #include "C/utils/serialize.hpp"
 #include "C/dfl/video_inference.hpp"
 
 using namespace ff;
+
+template<typename T>
+void serializefreetask(T *o, Frame *input) {}
 
 int main(int argc, char *argv[]) {
     timer chrono = timer("Total execution time");
@@ -66,7 +70,7 @@ int main(int argc, char *argv[]) {
     int num_workers{3};     // Number of workers
     int num_groups{1};      // Number of workers per group
     int forcecpu{0};        // Force the execution on the CPU
-    char *data_path;        // Patch to the dataset (absolute or with respect to build directory)
+    char *data_path;        // Path to the dataset (absolute or with respect to build directory)
     char *inmodel;          // Path to a TorchScript representation of a DNN
 
     if (argc >= 2) {
