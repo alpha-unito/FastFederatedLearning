@@ -331,27 +331,24 @@ int main(int argc, char *argv[]) {
     int max_round{-1};          // Number of rounds
     int forcecpu{0};            // Force the execution on the CPU
     std::string data_path;      // Path to the data folder (absolute or with respect to build directory)
-    std::string image_path;    // Path to the data folder (absolute or with respect to build directory)
 
     if (argc >= 2) {
         if (strcmp(argv[1], "-h") == 0) {
             if (groupName.compare(loggerName) == 0)
                 std::cout
-                        << "Usage: mvdet_dist [forcecpu=0/1] [num_cameras=7] [num_agg=1] [image_path] [data_path] [max_round=-1]\n";
+                        << "Usage: mvdet_dist [forcecpu=0/1] [data_path] [num_cameras=7] [num_agg=1] [max_round=-1]\n";
             exit(0);
         } else
             forcecpu = atoi(argv[1]);
     }
     if (argc >= 3)
-        ncam = atoi(argv[2]);
+        data_path = argv[2];
     if (argc >= 4)
-        nsqu = atoi(argv[3]);
+        ncam = atoi(argv[3]);
     if (argc >= 5)
-        image_path = argv[4];
+        nsqu = atoi(argv[4]);
     if (argc >= 6)
-        data_path = argv[5];
-    if (argc >= 7)
-        max_round = (int32_t) atoi(argv[6]);
+        max_round = (int32_t) atoi(argv[5]);
     if (groupName.compare(loggerName) == 0)
         std::cout << "Inferencing on " << ncam << " cameras." << std::endl;
 
@@ -370,8 +367,8 @@ int main(int argc, char *argv[]) {
 
     if (groupName.compare(loggerName) == 0)
         std::cout << "Checking data existence..." << std::endl;
-    if (!std::filesystem::exists(image_path)) {
-        error("Video file cannot be found at path: %s\n", image_path);
+    if (!std::filesystem::exists(data_path)) {
+        error("Video file cannot be found at path: %s\n", data_path);
         return -1;
     }
 
@@ -392,7 +389,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < ncam; ++i) {
             std::string rank = std::to_string(i + j);
             std::string id = std::to_string(i + j + 1);
-            firstset.push_back(new CameraNode("C" + id, image_path + "/C" + id + "/%08d.png",
+            firstset.push_back(new CameraNode("C" + id, data_path + "/Image_subsets_test/C" + id + "/%08d.png",
                                               data_path + "/proj_mat_cam" + rank + ".pt",
                                               data_path + "/base_model.pt",
                                               data_path + "/image_classifier.pt", i, j, max_round));
@@ -400,7 +397,7 @@ int main(int argc, char *argv[]) {
     source.createGroup("S0");
     for (int i = 0; i < ncam_x_nsqu; i++) {
         std::string id = std::to_string(i + 1);
-        a2a.createGroup("C" + id) << firstset[i];
+        a2a.createGroup("W" + id) << firstset[i];
     }
     for (int i = 0; i < nsqu; i++) {
         std::string id = std::to_string(i + 1);

@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     ff_a2a a2a;
     level0Gatherer <edgeMsg_t> root;
     std::vector < ff_node * > globalLeft;
-    for (int i = 1; i < num_workers; ++i) {
+    for (int i = 1; i <= num_workers; ++i) {
         ff_pipeline *pipe = new ff_pipeline;   // <---- To be removed and automatically added
         ff_a2a *local_a2a = new ff_a2a;
         pipe->add_stage(local_a2a, true);

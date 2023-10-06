@@ -21,7 +21,8 @@ TORCHSCRIPT_PATH = FFL_DIR + "data/yolov5n.torchscript"
 
 DFF_RUN_PATH = FFL_DIR + "libs/fastflow/ff/distributed/loader/dff_run"
 # DATA_PATH = FFL_DIR + "data/"
-DATA_PATH = FFL_DIR + "data/Ranger_Roll_m.mp4"
+# DATA_PATH = FFL_DIR + "data/Ranger_Roll_m.mp4"
+DATA_PATH = FFL_DIR + "data/mvdet_data"
 
 
 class Net(nn.Module):
@@ -44,16 +45,16 @@ class Net(nn.Module):
 
 config = Configuration(json_path=JSON_PATH, runner_path=DFF_RUN_PATH,
                        backend=constants.TCP, force_cpu=True, rounds=1, epochs=1,
-                       endpoints=["small-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
-                       # + ["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 10)]
-                       # + ["medium-" + str(rank) + ":800" + str(rank) for rank in range(10, 21)]
+                       endpoints=["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 10)]
+                                 + ["medium-" + str(rank) + ":800" + str(rank) for rank in range(10, 11)]
+                       # ["small-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
                        # + ["large-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
-                       , topology=constants.EDGE_INFERENCE)
+                       , topology=constants.MVDET)
 
 # model = Model(Net(), torch.rand(128, 1, 28, 28), optimize=False, torchscript_path=TORCHSCRIPT_PATH)
 model = Model(torchscript_path=TORCHSCRIPT_PATH, is_torchscript=True)
 dataset = Dataset(DATA_PATH)
 experiment = Experiment(config, model=model, dataset=dataset)
 
-experiment.kill()
+# experiment.kill()
 experiment.run_experiment()

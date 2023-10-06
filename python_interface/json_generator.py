@@ -83,10 +83,31 @@ class JSONGenerator(dict):
             self.logger.critical("Topology type not supported: %s", topology)
             raise e
         else:
-            counter: int = 0
-            for entry in self[constants.GROUPS]:
-                entry[constants.NAME] = constants.WORKER(counter)
-                counter += 1
+            match topology:
+                case constants.MASTER_WORKER | constants.PEER_TO_PEER | constants.EDGE_INFERENCE:
+                    counter: int = 0
+                    for entry in self[constants.GROUPS]:
+                        entry[constants.NAME] = constants.WORKER(counter)
+                        counter += 1
+                case constants.MVDET:
+                    counter: int = 0
+                    aggregator_needed: bool = False
+                    for entry in self[constants.GROUPS]:
+                        if counter == 0:
+                            entry[constants.NAME] = constants.SOURCE(counter)
+                        elif 1 <= counter < 8 and not aggregator_needed:
+                            entry[constants.NAME] = constants.WORKER(counter)
+                            if counter % 7 == 0:
+                                aggregator_needed: bool = True
+                                continue
+                        elif aggregator_needed:
+                            entry[constants.NAME] = constants.AGGREGATOR(int(counter / 7))
+                            aggregator_needed = False
+                        elif counter == 8:
+                            entry[constants.NAME] = constants.SOURCE(counter)
+                        counter += 1
+                case _:
+                    self.logger.critical("Topology type not supported: %s", topology)
             self.logger.debug("Created FastFlow names: %s", self[constants.GROUPS])
 
     def create_commands(self, commands: Optional[Union[str, List[str]]] = None):
@@ -207,10 +228,12 @@ class JSONGenerator(dict):
         """
         clients = None
         match self.topology:
-            case constants.MASTER_WORKER:
+            case constants.MASTER_WORKER | constants.EDGE_INFERENCE:
                 clients = len(self[constants.GROUPS]) - 1
-            case constants.PEER_TO_PEER | constants.EDGE_INFERENCE:
+            case constants.PEER_TO_PEER:
                 clients = len(self[constants.GROUPS])
+            case constants.MVDET:
+                clients = len(self[constants.GROUPS]) - 3
 
         return clients
 

@@ -86,6 +86,12 @@ class Experiment:
                                         str(self.json.get_clients_number()),
                                         "1",  # TODO: Add support for multiple groups
                                         self.model.get_torchscript_path()])
+            case constants.MVDET:
+                self.logger.info("Adding the %s command line parameters...", topology)
+                dff_run_command.extend([str(int(self.configuration.get_force_cpu())),
+                                        self.dataset.get_data_path(),
+                                        str(self.json.get_clients_number()),
+                                        "1"])  # TODO: Add support for multiple groups
             case _:
                 self.logger.warning("The specified topology (%s) does not match any of the supported ones.", topology)
 

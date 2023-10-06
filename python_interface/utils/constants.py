@@ -21,7 +21,7 @@ EXECUTABLE_PATH_P2P: Final[PathLike] = FFL_DIR + "build/C/examples/p2p/p2p_dist"
 EXECUTABLE_PATH_EI: Final[PathLike] = FFL_DIR + "build/C/examples/edgeinference/edgeinference_dist"
 """Basic edge-inference executable path"""
 
-EXECUTABLE_PATH_MVDET: Final[PathLike] = FFL_DIR + "build/C/examples/mvdet/mvdet"
+EXECUTABLE_PATH_MVDET: Final[PathLike] = FFL_DIR + "build/C/examples/mvdet/mvdet_dist"
 """MvDet edge-inference executable path"""
 
 # Logging #
@@ -62,6 +62,12 @@ GROUPS: Final[LiteralString] = "groups"
 
 WORKER: Callable[[int], LiteralString] = lambda rank: "W" + str(rank)
 """Function for determining the workers names in the FastFlow json format"""
+
+SOURCE: Callable[[int], LiteralString] = lambda rank: "S" + str(rank)
+"""Function for determining the source names in the FastFlow json format (mvdet)"""
+
+AGGREGATOR: Callable[[int], LiteralString] = lambda rank: "A" + str(rank)
+"""Function for determining the aggregator names in the FastFlow json format (mvdet)"""
 
 # Backend constants #
 TCP: Final[LiteralString] = "TCP"
