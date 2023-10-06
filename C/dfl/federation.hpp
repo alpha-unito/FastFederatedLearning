@@ -53,7 +53,7 @@ public:
             printf("Starting round %d\n", round);
             aggregator.new_round();
             for (int i = 0; i < num_workers_per_round; ++i)
-                this->ff_send_out_to(state_dict, i);
+                this->ff_send_out_to(state_dict, i); // TODO: deriva da SerializeFreeTask, da replicare
         }
 
         return this->GO_ON;

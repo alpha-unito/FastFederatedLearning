@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     if (argc >= 6)
         inmodel = argv[5];
     if (groupName.compare(loggerName) == 0)
-        std::cout << "Infering on " << num_workers << " cameras." << std::endl;
+        std::cout << "Infering on " << num_workers - 1 << " cameras." << std::endl;
 
     torch::DeviceType device_type;
     if (torch::cuda::is_available() && !forcecpu) {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     ff_a2a a2a;
     level0Gatherer <edgeMsg_t> root;
     std::vector < ff_node * > globalLeft;
-    for (int i = 0; i < num_workers; ++i) {
+    for (int i = 1; i < num_workers; ++i) {
         ff_pipeline *pipe = new ff_pipeline;   // <---- To be removed and automatically added
         ff_a2a *local_a2a = new ff_a2a;
         pipe->add_stage(local_a2a, true);
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
         local_a2a->add_secondset<ff_comb>(
                 {new ff_comb(new level1Gatherer <edgeMsg_t>, new HelperNode <edgeMsg_t>, true, true)});
         globalLeft.push_back(pipe);
-        auto g = a2a.createGroup("W" + std::to_string(i + 1));
+        auto g = a2a.createGroup("W" + std::to_string(i));
         g << pipe;
     }
     a2a.add_firstset(globalLeft, true);
@@ -137,7 +137,6 @@ int main(int argc, char *argv[]) {
     a2a.createGroup("W0") << root;
 
 #ifdef DISABLE_FF_DISTRIBUTED
-    a2a.wrap_around();
     if (a2a.run_and_wait_end() < 0) {
         error("Error while executing: All-to-All\n");
         return -1;
@@ -145,7 +144,6 @@ int main(int argc, char *argv[]) {
 #else
     ff::ff_pipeline pipe;
     pipe.add_stage(&a2a);
-    pipe.wrap_around();
     if (pipe.run_and_wait_end() < 0) {
         error("Error while executing: Pipe\n");
         return -1;

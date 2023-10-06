@@ -55,5 +55,5 @@ model = Model(torchscript_path=TORCHSCRIPT_PATH, is_torchscript=True)
 dataset = Dataset(DATA_PATH)
 experiment = Experiment(config, model=model, dataset=dataset)
 
-# experiment.kill()
+experiment.kill()
 experiment.run_experiment()
