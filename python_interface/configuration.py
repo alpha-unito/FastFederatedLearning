@@ -11,7 +11,11 @@ from python_interface.utils.constants import Backend, Topology
 class Configuration(dict):
     """General configuration of the FastFederatedLearning runtime."""
 
-    def __init__(self, json_path: PathLike, runner_path: PathLike, topology: Topology = constants.MASTER_WORKER,
+    def __init__(self, base_folder: Optional[PathLike] = constants.DEFAULT_FFL_DIR,
+                 runner_path: Optional[PathLike] = constants.DEFAULT_DFF_RUN_PATH,
+                 json_path: Optional[PathLike] = constants.DEFAULT_JSON_PATH,
+                 torchscript_path: Optional[PathLike] = constants.DEFAULT_MODEL_PATH,
+                 topology: Topology = constants.MASTER_WORKER,
                  endpoints: Union[int, List[str], List[Dict[str, str]]] = 2,
                  commands: Optional[Union[str, List[str]]] = None, backend: Backend = constants.TCP,
                  force_cpu: bool = True, rounds: int = 1, epochs: int = 1):
@@ -46,6 +50,7 @@ class Configuration(dict):
         self.set_json_path(json_path=json_path)
         self.set_runner_path(runner_path=runner_path)
         self.set_executable_path(topology=topology)
+        self.set_torchscript_path(torchscript_path=torchscript_path)
         self.set_backend(backend=backend)
         self.set_force_cpu(force_cpu=force_cpu)
         self.set_rounds(rounds=rounds)
@@ -122,6 +127,14 @@ class Configuration(dict):
         :rtype: JSONGenerator
         """
         return self.json
+
+    def get_torchscript_path(self) -> Optional[PathLike]:
+        """Get the TorchScript model path.
+
+        :return: the TorchScript model path
+        :rtype: PathLike
+        """
+        return self.torchscript_path
 
     def set_json_path(self, json_path: PathLike):
         """Set the JSON configuration file path.
@@ -212,3 +225,13 @@ class Configuration(dict):
         utils.check_positive_int(epochs, 0, self.logger)
         self.logger.info("Setting the number of epochs to %s", epochs)
         self["epochs"]: int = epochs
+
+    def set_torchscript_path(self, torchscript_path: PathLike):
+        """Set the TorchScript model path.
+
+        :param torchscript_path: TorchScript model path.
+        :type torchscript_path: PathLike
+        """
+        utils.check_and_create_path(torchscript_path, "torchscript_path", self.logger)
+        self.logger.info("Setting the TorchScript model path to %s", torchscript_path)
+        self.torchscript_path: PathLike = torchscript_path

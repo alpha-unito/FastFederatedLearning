@@ -9,19 +9,38 @@ VERSION: Final[LiteralString] = "v0.1.0-alpha"
 """FastFL software version"""
 
 # Paths #
-FFL_DIR: Final[PathLike] = "/mnt/shared/gmittone/FastFederatedLearning/"
-"""FastFederatedLearning root directory"""
+# TODO: this is not general
+DEFAULT_FFL_DIR: Final[PathLike] = "/mnt/shared/gmittone/FastFederatedLearning/"
+"""FastFederatedLearning deault  root directory"""
 
-EXECUTABLE_PATH_MS: Final[PathLike] = FFL_DIR + "build/C/examples/masterworker/masterworker_dist"
+DEFAULT_WORKSPACE_DIR: Final[PathLike] = DEFAULT_FFL_DIR + "workspace/"
+"""FastFederatedLearning default workspace directory"""
+
+DEFAULT_LIBS_DIR: Final[PathLike] = DEFAULT_FFL_DIR + "libs/"
+"""FastFederatedLearning default libraries directory"""
+
+DEFAULT_BUILD_DIR: Final[PathLike] = DEFAULT_FFL_DIR + "build/"
+"""FastFederatedLearning default libraries directory"""
+
+DEFAULT_JSON_PATH: Final[PathLike] = DEFAULT_WORKSPACE_DIR + "config.json"
+"""FastFederatedLearning default JSON configuration file path"""
+
+DEFAULT_MODEL_PATH: Final[PathLike] = DEFAULT_WORKSPACE_DIR + "model.pt"
+"""FastFederatedLearning default model file path"""
+
+DEFAULT_DFF_RUN_PATH: Final[PathLike] = DEFAULT_LIBS_DIR + "fastflow/ff/distributed/loader/dff_run"
+"""FastFederatedLearning default dff_run file path"""
+
+EXECUTABLE_PATH_MS: Final[PathLike] = DEFAULT_BUILD_DIR + "C/examples/masterworker/masterworker_dist"
 """Master-Worker executable path"""
 
-EXECUTABLE_PATH_P2P: Final[PathLike] = FFL_DIR + "build/C/examples/p2p/p2p_dist"
+EXECUTABLE_PATH_P2P: Final[PathLike] = DEFAULT_BUILD_DIR + "C/examples/p2p/p2p_dist"
 """Peer-to-Peer executable path"""
 
-EXECUTABLE_PATH_EI: Final[PathLike] = FFL_DIR + "build/C/examples/edgeinference/edgeinference_dist"
+EXECUTABLE_PATH_EI: Final[PathLike] = DEFAULT_BUILD_DIR + "C/examples/edgeinference/edgeinference_dist"
 """Basic edge-inference executable path"""
 
-EXECUTABLE_PATH_MVDET: Final[PathLike] = FFL_DIR + "build/C/examples/mvdet/mvdet_dist"
+EXECUTABLE_PATH_MVDET: Final[PathLike] = DEFAULT_BUILD_DIR + "C/examples/mvdet/mvdet_dist"
 """MvDet edge-inference executable path"""
 
 # Logging #

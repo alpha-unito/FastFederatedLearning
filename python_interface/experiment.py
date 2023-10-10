@@ -10,6 +10,7 @@ from pssh.clients.ssh.parallel import ParallelSSHClient
 from torch.jit import ScriptModule
 
 from python_interface.configuration import Configuration
+from python_interface.custom.custom_exceptions import WronglySpecifiedArgumentException
 from python_interface.dataset import Dataset
 from python_interface.json_generator import JSONGenerator
 from python_interface.model import Model
@@ -40,9 +41,13 @@ class Experiment:
         """Experiment start-up.
         Saves the TorchScript model and the JSON configuration file, and then calls the C/C++ backend executable.
         """
+        try:
+            self.model.check_torchscript_no_model(self.configuration.get_torchscript_path())
+        except WronglySpecifiedArgumentException as e:
+            self.logger.critical(e.message)
         if not self.model.already_exists():
-            self.logger.info("Saving TorchScript model to: %s", self.model.get_torchscript_path())
-            torch.jit.save(self.model.compile(), self.model.get_torchscript_path())
+            self.logger.info("Saving TorchScript model to: %s", self.configuration.get_torchscript_path())
+            torch.jit.save(self.model.compile(), self.configuration.get_torchscript_path())
         self.json.generate_json_file(self.configuration.get_json_path())
 
         dff_run_command: List[str] = self.create_dff_run_command(self.configuration.get_topology())
@@ -78,14 +83,14 @@ class Experiment:
                                         str(self.configuration.get_epochs()),
                                         self.dataset.get_data_path(),
                                         str(self.json.get_clients_number()),
-                                        self.model.get_torchscript_path()])
+                                        self.configuration.get_torchscript_path()])
             case constants.EDGE_INFERENCE:
                 self.logger.info("Adding the %s command line parameters...", topology)
                 dff_run_command.extend([str(int(self.configuration.get_force_cpu())),
                                         self.dataset.get_data_path(),
                                         str(self.json.get_clients_number()),
                                         "1",  # TODO: Add support for multiple groups
-                                        self.model.get_torchscript_path()])
+                                        self.configuration.get_torchscript_path()])
             case constants.MVDET:
                 self.logger.info("Adding the %s command line parameters...", topology)
                 dff_run_command.extend([str(int(self.configuration.get_force_cpu())),

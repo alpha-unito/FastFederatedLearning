@@ -11,6 +11,8 @@
 #include "helpers.hpp"
 #include "data_stucts.hpp"
 
+// TODO: refactor code
+
 using namespace ff;
 
 template<typename T>

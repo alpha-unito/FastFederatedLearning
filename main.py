@@ -1,5 +1,6 @@
 import logging
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -12,17 +13,11 @@ from python_interface.utils import constants
 logging.basicConfig(level=logging.DEBUG)
 
 FFL_DIR = "/mnt/shared/gmittone/FastFederatedLearning/"
-SUFFIX = ""
-
-# TODO: remove these two string
-JSON_PATH = FFL_DIR + "workspace/config" + SUFFIX + ".json"
-# TORCHSCRIPT_PATH = FFL_DIR + "workspace/model" + SUFFIX + ".pt"
-TORCHSCRIPT_PATH = FFL_DIR + "data/yolov5n.torchscript"
-
-DFF_RUN_PATH = FFL_DIR + "libs/fastflow/ff/distributed/loader/dff_run"
-# DATA_PATH = FFL_DIR + "data/"
+# TORCHSCRIPT_PATH = FFL_DIR + "data/yolov5n.torchscript"
 # DATA_PATH = FFL_DIR + "data/Ranger_Roll_m.mp4"
-DATA_PATH = FFL_DIR + "data/mvdet_data"
+# DATA_PATH = FFL_DIR + "data/mvdet_data"
+
+DATA_PATH = FFL_DIR + "data/"
 
 
 class Net(nn.Module):
@@ -43,16 +38,14 @@ class Net(nn.Module):
 # model = torchvision.models.resnet18(num_classes=10)
 # model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 
-config = Configuration(json_path=JSON_PATH, runner_path=DFF_RUN_PATH,
-                       backend=constants.TCP, force_cpu=True, rounds=1, epochs=1,
-                       endpoints=["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 10)]
-                                 + ["medium-" + str(rank) + ":800" + str(rank) for rank in range(10, 11)]
-                       # ["small-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
+config = Configuration(backend=constants.TCP, force_cpu=True, rounds=1, epochs=1,
+                       endpoints=["small-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
+                       # ["medium-0" + str(rank) + ":800" + str(rank) for rank in range(1, 10)]
+                       # + ["medium-" + str(rank) + ":800" + str(rank) for rank in range(10, 11)]
                        # + ["large-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
-                       , topology=constants.MVDET)
+                       , topology=constants.MASTER_WORKER)
 
-# model = Model(Net(), torch.rand(128, 1, 28, 28), optimize=False, torchscript_path=TORCHSCRIPT_PATH)
-model = Model(torchscript_path=TORCHSCRIPT_PATH, is_torchscript=True)
+model = Model(model=Net(), example=torch.rand(128, 1, 28, 28), optimize=False)
 dataset = Dataset(DATA_PATH)
 experiment = Experiment(config, model=model, dataset=dataset)
 
