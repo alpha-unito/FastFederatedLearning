@@ -11,10 +11,10 @@ from python_interface.utils.constants import Backend, Topology
 class Configuration(dict):
     """General configuration of the FastFederatedLearning runtime."""
 
-    def __init__(self, base_folder: Optional[PathLike] = constants.DEFAULT_FFL_DIR,
-                 runner_path: Optional[PathLike] = constants.DEFAULT_DFF_RUN_PATH,
+    def __init__(self, runner_path: Optional[PathLike] = constants.DEFAULT_DFF_RUN_PATH,
                  json_path: Optional[PathLike] = constants.DEFAULT_JSON_PATH,
                  torchscript_path: Optional[PathLike] = constants.DEFAULT_MODEL_PATH,
+                 executable_path: Optional[PathLike] = None,
                  topology: Topology = constants.MASTER_WORKER,
                  endpoints: Union[int, List[str], List[Dict[str, str]]] = 2,
                  commands: Optional[Union[str, List[str]]] = None, backend: Backend = constants.TCP,
@@ -23,9 +23,11 @@ class Configuration(dict):
         This class directly extends a standard Python dictionary.
 
         :param json_path: path of the JSON configuration file.
-        :type json_path: PathLike
-        :param runner_path: path of the FastFlow executable file (masterworker or p2p).
-        :type runner_path: PathLike
+        :type json_path: Optional[PathLike]
+        :param runner_path: path of the dff_run executable file.
+        :type runner_path: Optional[PathLike]
+        :param executable_path: path of the FastFlow executable file (masterworker or p2p).
+        :type executable_path: Optional[PathLike]
         :param topology: type of topology for the experiment (masterworker or p2p).
         :type topology: Topology
         :param endpoints: number or list of hosts to add to the federation.
@@ -49,7 +51,7 @@ class Configuration(dict):
 
         self.set_json_path(json_path=json_path)
         self.set_runner_path(runner_path=runner_path)
-        self.set_executable_path(topology=topology)
+        self.set_executable_path(executable_path=executable_path, topology=topology)
         self.set_torchscript_path(torchscript_path=torchscript_path)
         self.set_backend(backend=backend)
         self.set_force_cpu(force_cpu=force_cpu)
@@ -134,7 +136,7 @@ class Configuration(dict):
         :return: the TorchScript model path
         :rtype: PathLike
         """
-        return self.torchscript_path
+        return self["torchscript_path"]
 
     def set_json_path(self, json_path: PathLike):
         """Set the JSON configuration file path.
@@ -167,13 +169,14 @@ class Configuration(dict):
         """
         # utils.check_mutually_exclusive_args(executable_path, topology, self.logger)
         self["topology"]: Topology = topology
-        if executable_path is not None:  # TODO: add support for inputing custom executable paths
+        if executable_path is not None:
             utils.check_and_create_path(executable_path, "executable_path", self.logger)
             self.logger.info("Setting the FastFlow executable path to %s", executable_path)
             self["executable_path"]: PathLike = executable_path
-        else:  # TODO: Make this choice extendible in the future with user-defined topologies
+            self["topology"]: Topology = constants.CUSTOM
+        else:
             utils.check_var_in_literal(topology, Topology, self.logger)
-            self.logger.info("Setting the FastFlow executable to %s", topology)
+            self.logger.info("Setting the FastFlow topology to %s", topology)
             self["executable_path"]: PathLike = None
             match topology:
                 case constants.MASTER_WORKER:
@@ -234,4 +237,4 @@ class Configuration(dict):
         """
         utils.check_and_create_path(torchscript_path, "torchscript_path", self.logger)
         self.logger.info("Setting the TorchScript model path to %s", torchscript_path)
-        self.torchscript_path: PathLike = torchscript_path
+        self["torchscript_path"]: PathLike = torchscript_path

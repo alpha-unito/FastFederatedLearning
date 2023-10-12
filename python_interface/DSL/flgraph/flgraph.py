@@ -13,25 +13,28 @@ from .building_block import BuildingBlock
 
 
 class FLGraph:
+    """ This class provides the interface for creating, compiling and running a Federated Learning graph """
 
     def __init__(self, tasks: List[BuildingBlock]):
         """Class modeling a graph representing a Federated Learning tasks.
 
-           :param nodes: List of nodes involved in the FL task, specified as hostnames, ip, or ip:port.
-           :type nodes: Union[str, List[str]]
            :param tasks: List of tasks to be carried out by the federated infrastructure; they implicitly specify the
                 FL graph structure.
            :type tasks: List[Compute, Repeat, Distribute, Aggregate]
-           :param coordinator: specify the coordination node, if any.
-           :type coordinator: Optional[str]
        """
         self.logger: logging.Logger = get_logger(self.__class__.__name__)
         self.tasks: List = tasks
 
-    def run(self):
-        return None
+    def compile(self, workspace: PathLike = DEFAULT_WORKSPACE_DIR) -> PathLike:
+        """
+        Translation of the provided structure into a concrete C/C++ source file implementing the specified structure.
+        The source file is then compiled and linked.
 
-    def compile(self, workspace: PathLike = DEFAULT_WORKSPACE_DIR):
+        :param workspace: path to the workspace folder.
+        :type workspace: PathLike
+        :return: path to the executable file.
+        :rtype: PathLike
+        """
         self.logger.info("Starting the creation of the FastFlow C/C++ source file...")
         check_and_create_path(workspace, "C source file", self.logger)
         source_path: PathLike = workspace + "source.cpp"
@@ -94,3 +97,5 @@ class FLGraph:
 
         self.logger.info("Linkingn completed successfully. Removing build files...")
         call(["rm", "-rf", workspace + "source.cpp.o", workspace + "source.cpp.o.d"])
+
+        return workspace + "source"

@@ -60,7 +60,10 @@ EDGE_INFERENCE: Final[LiteralString] = "edge_inference"
 MVDET: Final[LiteralString] = "multiview_detection"
 """Multiview detection topology"""
 
-Topology: Literal[Final[Tuple[LiteralString]]] = Literal[MASTER_WORKER, PEER_TO_PEER, EDGE_INFERENCE, MVDET]
+CUSTOM: Final[LiteralString] = "custom"
+"""Multiview detection topology"""
+
+Topology: Literal[Final[Tuple[LiteralString]]] = Literal[MASTER_WORKER, PEER_TO_PEER, EDGE_INFERENCE, MVDET, CUSTOM]
 """Supported topologies names"""
 
 # JSON-related constants #

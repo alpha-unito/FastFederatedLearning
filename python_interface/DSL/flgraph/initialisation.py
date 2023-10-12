@@ -148,6 +148,7 @@ end_code_no_feedback: str = """
 
 
 class Initialisation(BuildingBlock):
+    """ Class responsible for all the non-ML related code; contains initialisation and termination code templates. """
 
     def __init__(self):
         super().__init__(self.__class__.__name__)

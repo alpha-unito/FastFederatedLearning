@@ -39,6 +39,7 @@ worker_creation = """
 
 
 class Parallel(BuildingBlock):
+    """ Class responsible for Parallel structures """
 
     def __init__(self, tasks: List[BuildingBlock], replicas: int = 1):
         super().__init__(self.__class__.__name__)

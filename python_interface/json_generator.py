@@ -84,7 +84,7 @@ class JSONGenerator(dict):
             raise e
         else:
             match topology:
-                case constants.MASTER_WORKER | constants.PEER_TO_PEER | constants.EDGE_INFERENCE:
+                case constants.MASTER_WORKER | constants.PEER_TO_PEER | constants.EDGE_INFERENCE | constants.CUSTOM:
                     counter: int = 0
                     for entry in self[constants.GROUPS]:
                         entry[constants.NAME] = constants.WORKER(counter)

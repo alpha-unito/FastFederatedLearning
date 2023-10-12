@@ -76,7 +76,7 @@ class Experiment:
                                       self.configuration.get_executable_path()]
 
         match topology:
-            case constants.MASTER_WORKER | constants.PEER_TO_PEER:
+            case constants.MASTER_WORKER | constants.PEER_TO_PEER | constants.CUSTOM:
                 self.logger.info("Adding the %s command line parameters...", topology)
                 dff_run_command.extend([str(int(self.configuration.get_force_cpu())),
                                         str(self.configuration.get_rounds()),

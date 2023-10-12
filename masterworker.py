@@ -1,9 +1,16 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from python_interface.DSL.flgraph import *
 from python_interface.DSL.flgraph.flgraph import *
+from python_interface.configuration import Configuration
+from python_interface.dataset import Dataset
+from python_interface.experiment import Experiment
+from python_interface.model import Model
 
+FFL_DIR = "/mnt/shared/gmittone/FastFederatedLearning/"
+DATA_PATH = FFL_DIR + "data/"
 nodes = ["small-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
 
 
@@ -27,7 +34,7 @@ class Net(nn.Module):
         return output
 
 
-federation = FLGraph([
+ff_executable = FLGraph([
     Initialisation(),  # TODO: add command line parameters here
     Feedback([
         Parallel([
@@ -37,7 +44,12 @@ federation = FLGraph([
         Reduce(),
         Broadcast(),
     ])
-])
+]).compile()
 
-federation.compile()
-federation.run()
+config = Configuration(endpoints=nodes, executable_path=ff_executable)
+model = Model(model=Net(), example=torch.rand(128, 1, 28, 28), optimize=False)
+dataset = Dataset(DATA_PATH)  # TODO: add dataset support
+experiment = Experiment(config, model=model, dataset=dataset)
+
+# experiment.kill()
+experiment.run_experiment()
