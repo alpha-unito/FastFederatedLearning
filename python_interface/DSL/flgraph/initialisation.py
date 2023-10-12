@@ -1,8 +1,7 @@
 """
 Class responsible for all the non-ML related code; contains initialisation and termination code templates.
 """
-from io import TextIOWrapper
-from typing import List
+from typing import List, TextIO
 
 from .building_block import BuildingBlock
 from .feedback import Feedback
@@ -44,7 +43,7 @@ int main(int argc, char *argv[]) {
             break;
         }
     if (DFF_Init(argc, argv) < 0) {
-        error("Error while executing: DFF_Init\n");
+        error("Error while executing: DFF_Init");
         return -1;
     }
 #endif
@@ -63,7 +62,7 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[1], "-h") == 0) {
             if (groupName.compare(loggerName) == 0)
                 std::cout
-                        << "Usage: masterworker [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path] [num_workers] [model_path]\n";
+                        << "Usage: masterworker [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path] [num_workers] [model_path]" << std::endl;
             exit(0);
         } else
             forcecpu = atoi(argv[1]);
@@ -101,10 +100,11 @@ int main(int argc, char *argv[]) {
             torch::data::transforms::Stack<>());
 """
 
-end_code_feedback: str = """#ifdef DISABLE_FF_DISTRIBUTED
+end_code_feedback: str = """
+#ifdef DISABLE_FF_DISTRIBUTED
     a2a.wrap_around();
     if (a2a.run_and_wait_end() < 0) {
-        error("Error while executing: All-to-All\n");
+        error("Error while executing: All-to-All");
         return -1;
     }
 #else
@@ -112,7 +112,7 @@ end_code_feedback: str = """#ifdef DISABLE_FF_DISTRIBUTED
     pipe.add_stage(&a2a);
     pipe.wrap_around();
     if (pipe.run_and_wait_end() < 0) {
-        error("Error while executing: Pipe\n");
+        error("Error while executing: Pipe");
         return -1;
     }
 #endif
@@ -123,10 +123,11 @@ end_code_feedback: str = """#ifdef DISABLE_FF_DISTRIBUTED
 }
 """
 
-end_code_no_feedback: str = """#ifdef DISABLE_FF_DISTRIBUTED
+end_code_no_feedback: str = """
+#ifdef DISABLE_FF_DISTRIBUTED
     a2a.wrap_around();
     if (a2a.run_and_wait_end() < 0) {
-        error("Error while executing: All-to-All\n");
+        error("Error while executing: All-to-All");
         return -1;
     }
 #else
@@ -134,7 +135,7 @@ end_code_no_feedback: str = """#ifdef DISABLE_FF_DISTRIBUTED
     pipe.add_stage(&a2a);
     pipe.wrap_around();
     if (pipe.run_and_wait_end() < 0) {
-        error("Error while executing: Pipe\n");
+        error("Error while executing: Pipe");
         return -1;
     }
 #endif
@@ -151,9 +152,14 @@ class Initialisation(BuildingBlock):
     def __init__(self):
         super().__init__(self.__class__.__name__)
 
-    def compile(self, building_blocks: List[BuildingBlock], source_file: TextIOWrapper):
+    def compile(self, building_blocks: List[BuildingBlock], source_file: TextIO):
         source_file.write(init_code)
-        building_blocks[0].compile(building_blocks[1:], source_file)
+        if building_blocks:
+            first_bb: BuildingBlock
+            remaining_bb: List[BuildingBlock]
+            first_bb, *remaining_bb = building_blocks
+            self.logger.debug("Analysing the %s building block...", first_bb)
+            first_bb.compile(remaining_bb, source_file)
         if isinstance(building_blocks[0], Feedback):
             source_file.write(end_code_feedback)
         else:

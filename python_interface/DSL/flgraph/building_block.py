@@ -3,8 +3,7 @@ Basic Abstract Class for all the RISC-pB2L building blocks
 """
 import logging
 from abc import ABC, abstractmethod
-from io import TextIOWrapper
-from typing import List, Self
+from typing import List, Self, TextIO
 
 from python_interface.utils.utils import get_logger
 
@@ -22,7 +21,7 @@ class BuildingBlock(ABC):
         self.logger: logging.Logger = get_logger(class_name)
 
     @abstractmethod
-    def compile(self, building_blocks: List[Self], source_file: TextIOWrapper):
+    def compile(self, building_blocks: List[Self], source_file: TextIO):
         """
         Method for generating the C code corresponding to the calling Building Block
 
@@ -32,3 +31,12 @@ class BuildingBlock(ABC):
         :type source_file: TextIOWrapper
         """
         pass
+
+    def __str__(self) -> str:
+        """
+        Get the caller's class name
+
+        :return: name of the calling class.
+        :rtype: str
+        """
+        return self.__class__.__name__

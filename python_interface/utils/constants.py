@@ -44,7 +44,7 @@ EXECUTABLE_PATH_MVDET: Final[PathLike] = DEFAULT_BUILD_DIR + "C/examples/mvdet/m
 """MvDet edge-inference executable path"""
 
 # Logging #
-LOGGING_CONFIGURATION: Final[PathLike] = "python_interface/logging.conf"
+LOGGING_CONFIGURATION: Final[PathLike] = DEFAULT_FFL_DIR + "python_interface/logging.conf"
 """Path to the logging configuration file"""
 
 # Topology-related constants #

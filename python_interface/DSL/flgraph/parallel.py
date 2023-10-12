@@ -7,7 +7,7 @@ from typing import List
 from .building_block import BuildingBlock
 from .wrapper import Wrapper
 
-worker_creation = """
+init_code: str = """
     if (groupName.compare(loggerName) == 0)
         std::cout << "Worker creation..." << std::endl;
     ff_a2a a2a;
@@ -15,7 +15,13 @@ worker_creation = """
     for (int i = 1; i <= num_workers; ++i) {
         Net <torch::jit::Module> *net = new Net<torch::jit::Module>(inmodel);
         auto optimizer = std::make_shared<torch::optim::Adam>(net->parameters(), torch::optim::AdamOptions(0.001));
+"""
 
+end_code: str = """
+    }
+    a2a.add_secondset(w);"""
+
+worker_creation = """
         ff_node *worker = new ff_comb(new MiNodeAdapter<StateDict>,
                                       new Worker(i, net, net->state_dict(), train_epochs, optimizer,
                                                  torch::data::make_data_loader(train_dataset,
@@ -29,8 +35,6 @@ worker_creation = """
                                                  device));
         w.push_back(worker);
         a2a.createGroup("W" + std::to_string(i)) << worker;
-    }
-    a2a.add_secondset(w);
     """
 
 
@@ -42,6 +46,20 @@ class Parallel(BuildingBlock):
         self.replicas: int = replicas
 
     def compile(self, building_blocks: List[BuildingBlock], source_file: TextIOWrapper):
+        source_file.write(init_code)
+        if self.tasks:
+            first_bb: BuildingBlock
+            remaining_bb: List[BuildingBlock]
+            first_bb, *remaining_bb = self.tasks
+            self.logger.debug("Analysing the %s task...", first_bb)
+            first_bb.compile(remaining_bb, source_file)
         if all(isinstance(task, Wrapper) for task in self.tasks):
             if all(task.get_label() in ["Train", "Test"] for task in self.tasks):
                 source_file.write(worker_creation)
+        source_file.write(end_code)
+        if building_blocks:
+            first_bb: BuildingBlock
+            remaining_bb: List[BuildingBlock]
+            first_bb, *remaining_bb = building_blocks
+            self.logger.debug("Analysing the %s building block...", first_bb)
+            first_bb.compile(remaining_bb, source_file)

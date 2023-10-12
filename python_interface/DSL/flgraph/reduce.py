@@ -28,4 +28,10 @@ class Reduce(BuildingBlock):
     def compile(self, building_blocks: List[BuildingBlock], source_file: TextIOWrapper):
         if isinstance(building_blocks[0], Broadcast):
             source_file.write(add_aggregator)
-        building_blocks[1].compile(building_blocks[2:], source_file)
+            building_blocks.pop()
+        if building_blocks:
+            first_bb: BuildingBlock
+            remaining_bb: List[BuildingBlock]
+            first_bb, *remaining_bb = building_blocks
+            self.logger.debug("Analysing the %s building block...", first_bb)
+            first_bb.compile(remaining_bb, source_file)

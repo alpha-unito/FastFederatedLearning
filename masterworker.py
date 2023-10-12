@@ -1,8 +1,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-from flgraph import *
-from flgraph.flgraph import *
+from python_interface.DSL.flgraph import *
+from python_interface.DSL.flgraph.flgraph import *
 
 nodes = ["small-0" + str(rank) + ":800" + str(rank) for rank in range(1, 6)]
 
