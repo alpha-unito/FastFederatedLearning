@@ -1,13 +1,12 @@
 """
 Class responsible for Parallel structures
 """
-from io import TextIOWrapper
-from typing import List
+from typing import List, Final, TextIO
 
 from .building_block import BuildingBlock
 from .wrapper import Wrapper
 
-init_code: str = """
+init_code: Final[str] = """
     if (groupName.compare(loggerName) == 0)
         std::cout << "Worker creation..." << std::endl;
     ff_a2a a2a;
@@ -17,11 +16,11 @@ init_code: str = """
         auto optimizer = std::make_shared<torch::optim::Adam>(net->parameters(), torch::optim::AdamOptions(0.001));
 """
 
-end_code: str = """
+end_code: Final[str] = """
     }
     a2a.add_secondset(w);"""
 
-worker_creation = """
+worker_creation: Final[str] = """
         ff_node *worker = new ff_comb(new MiNodeAdapter<StateDict>,
                                       new Worker(i, net, net->state_dict(), train_epochs, optimizer,
                                                  torch::data::make_data_loader(train_dataset,
@@ -42,11 +41,26 @@ class Parallel(BuildingBlock):
     """ Class responsible for Parallel structures """
 
     def __init__(self, tasks: List[BuildingBlock], replicas: int = 1):
-        super().__init__(self.__class__.__name__)
+        """ Initialisation of the Parallel Building Block.
+
+        :param tasks: nested Building Blocks to analyse.
+        :type tasks: List[BuildingBlock]
+        :param replicas: number of different replicas to run.
+        :type replicas: int
+        """
+        super().__init__(self.__str__())
+
         self.tasks: List[BuildingBlock] = tasks
         self.replicas: int = replicas
 
-    def compile(self, building_blocks: List[BuildingBlock], source_file: TextIOWrapper):
+    def compile(self, building_blocks: List[BuildingBlock], source_file: TextIO):
+        """ Compilation of the Parallel Building Block
+
+        :param building_blocks: remaining Building Blocks to compile.
+        :type building_blocks: List[BuildingBlock]
+        :param source_file: C/C++ source file to write on.
+        :type source_file: TextIO
+        """
         source_file.write(init_code)
         if self.tasks:
             first_bb: BuildingBlock

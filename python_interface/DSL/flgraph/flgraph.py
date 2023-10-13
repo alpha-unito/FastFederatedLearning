@@ -23,7 +23,8 @@ class FLGraph:
            :type tasks: List[Compute, Repeat, Distribute, Aggregate]
        """
         self.logger: logging.Logger = get_logger(self.__class__.__name__)
-        self.tasks: List = tasks
+
+        self.tasks: List[BuildingBlock] = tasks
 
     def compile(self, workspace: PathLike = DEFAULT_WORKSPACE_DIR) -> PathLike:
         """

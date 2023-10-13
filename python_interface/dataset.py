@@ -1,7 +1,5 @@
 """
 Wrapper class for a generic dataset.
-
-This class also offers methods for data splitting.
 """
 import logging
 
@@ -9,7 +7,7 @@ from python_interface.custom.custom_types import PathLike
 from python_interface.utils import utils
 
 
-class Dataset():
+class Dataset:
     """Wrapper for a generic dataset"""
 
     def __init__(self, data_path: PathLike):
@@ -19,6 +17,7 @@ class Dataset():
         :type data_path:
         """
         self.logger: logging.Logger = utils.get_logger(self.__class__.__name__)
+
         self.data_path: PathLike = data_path
 
         self.logger.info("Dataset loaded successfully.")

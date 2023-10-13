@@ -1,12 +1,12 @@
 """
 Class responsible for all the non-ML related code; contains initialisation and termination code templates.
 """
-from typing import List, TextIO
+from typing import List, TextIO, Final
 
 from .building_block import BuildingBlock
 from .feedback import Feedback
 
-init_code: str = """#include <mutex>
+init_code: Final[str] = """#include <mutex>
 #include <iostream>
 
 #include <ff/dff.hpp>
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
             torch::data::transforms::Stack<>());
 """
 
-end_code_feedback: str = """
+end_code_feedback: Final[str] = """
 #ifdef DISABLE_FF_DISTRIBUTED
     a2a.wrap_around();
     if (a2a.run_and_wait_end() < 0) {
@@ -123,7 +123,7 @@ end_code_feedback: str = """
 }
 """
 
-end_code_no_feedback: str = """
+end_code_no_feedback: Final[str] = """
 #ifdef DISABLE_FF_DISTRIBUTED
     a2a.wrap_around();
     if (a2a.run_and_wait_end() < 0) {
@@ -151,9 +151,17 @@ class Initialisation(BuildingBlock):
     """ Class responsible for all the non-ML related code; contains initialisation and termination code templates. """
 
     def __init__(self):
-        super().__init__(self.__class__.__name__)
+        """ Initialisation of the Initialisation Building Block. """
+        super().__init__(self.__str__())
 
     def compile(self, building_blocks: List[BuildingBlock], source_file: TextIO):
+        """ Compilation of the Initialisation Building Block
+
+        :param building_blocks: remaining Building Blocks to compile.
+        :type building_blocks: List[BuildingBlock]
+        :param source_file: C/C++ source file to write on.
+        :type source_file: TextIO
+        """
         source_file.write(init_code)
         if building_blocks:
             first_bb: BuildingBlock

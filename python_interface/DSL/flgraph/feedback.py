@@ -1,20 +1,35 @@
 """
 Class responsible for feedback loop structures
 """
-from io import TextIOWrapper
-from typing import List
+from typing import List, TextIO
 
 from .building_block import BuildingBlock
 
 
 class Feedback(BuildingBlock):
+    """ Class responsible for feedback loop structures """
 
     def __init__(self, tasks: List[BuildingBlock], rounds: int = 1):
-        super().__init__(self.__class__.__name__)
-        self.tasks: List[BuildingBlock] = tasks  # TODO: create a type for all components
+        """ Initialisation of the Feedback Building Block.
+
+        :param tasks: nested Building Blocks to analyse.
+        :type tasks: List[BuildingBlock]
+        :param rounds: number of times to run the feedback loop.
+        :type rounds: int
+        """
+        super().__init__(self.__str__())
+
+        self.tasks: List[BuildingBlock] = tasks
         self.rounds: int = rounds
 
-    def compile(self, building_blocks: List[BuildingBlock], source_file: TextIOWrapper):
+    def compile(self, building_blocks: List[BuildingBlock], source_file: TextIO):
+        """ Compilation of the Feedback Building Block
+
+        :param building_blocks: remaining Building Blocks to compile.
+        :type building_blocks: List[BuildingBlock]
+        :param source_file: C/C++ source file to write on.
+        :type source_file: TextIO
+        """
         if self.tasks:
             first_bb: BuildingBlock
             remaining_bb: List[BuildingBlock]

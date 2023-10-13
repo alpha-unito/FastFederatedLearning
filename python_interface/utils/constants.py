@@ -5,7 +5,7 @@ from typing import Final, Callable, LiteralString, Tuple, Literal
 from python_interface.custom.custom_types import PathLike
 
 # Version #
-VERSION: Final[LiteralString] = "v0.1.0-alpha"
+VERSION: Final[LiteralString] = "v0.2.0-alpha"
 """FastFL software version"""
 
 # Paths #

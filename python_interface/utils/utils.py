@@ -1,16 +1,16 @@
 """
-Small utility class.
+Small utility module.
 """
 import logging
 import logging.config
 import os
+from typing import Any, get_args, NoReturn
 
-from typing import Any, get_args
 from python_interface.custom.custom_exceptions import MutuallyExclusiveArgumentsException
 from python_interface.custom.custom_types import PathLike
 from python_interface.utils.constants import LOGGING_CONFIGURATION, VERSION
 
-LOGGER_NUMBER = 0
+LOGGER_NUMBER: int = 0
 """Number of different loggers currently instantiated"""
 
 
@@ -32,12 +32,12 @@ def get_logger(class_name: str = "root") -> logging.Logger:
 
     logging.config.fileConfig(LOGGING_CONFIGURATION)
     if LOGGER_NUMBER == 1:
-        logger = logging.getLogger("root")
+        logger: logging.Logger = logging.getLogger("root")
         logger.info("FastFederatedLearning (FastFL) - %s - Starting the execution...", VERSION)
     return logging.getLogger(class_name)
 
 
-def check_and_create_path(path: PathLike, target: str = "", logger: logging.Logger = logging):
+def check_and_create_path(path: PathLike, target: str = "", logger: logging.Logger = logging):  # TODO: eccezioni?
     """Check if the provided path already exists; otherwise it will be created.
 
     :param path: path to check.
@@ -56,7 +56,8 @@ def check_and_create_path(path: PathLike, target: str = "", logger: logging.Logg
         logger.info("Created path: %s.", path)
 
 
-def check_mutually_exclusive_args(arg_1: Any, arg_2: Any, logger: logging.Logger = logging):
+def check_mutually_exclusive_args(arg_1: Any, arg_2: Any,
+                                  logger: logging.Logger = logging) -> NoReturn | MutuallyExclusiveArgumentsException:
     """Check if the specified arguments are mutually exclusive.
 
     :param arg_1: first argument.
@@ -72,7 +73,7 @@ def check_mutually_exclusive_args(arg_1: Any, arg_2: Any, logger: logging.Logger
         raise MutuallyExclusiveArgumentsException("Mutually exclusive arguments.")
 
 
-def check_var_in_literal(var: Any, literal: Any, logger: logging.Logger = logging):
+def check_var_in_literal(var: Any, literal: Any, logger: logging.Logger = logging) -> NoReturn | ValueError:
     """Check if the variable is in a list of accepted values.
 
     :param var: variable to check.
@@ -88,7 +89,7 @@ def check_var_in_literal(var: Any, literal: Any, logger: logging.Logger = loggin
         raise ValueError("Value " + str(var) + " not in " + str(literal))
 
 
-def check_positive_int(var: int, threshold: int = 0, logger: logging.Logger = logging):
+def check_positive_int(var: int, threshold: int = 0, logger: logging.Logger = logging) -> NoReturn | ValueError:
     """Check if the variable is an integer greater than a threshold.
 
     :param var: variable to check.

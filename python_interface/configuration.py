@@ -1,11 +1,12 @@
 """General configuration of the FastFederatedLearning runtime."""
 import logging
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union, Optional, NoReturn
 
 from python_interface.custom.custom_types import PathLike
 from python_interface.json_generator import JSONGenerator
-from python_interface.utils import constants, utils
+from python_interface.utils import constants
 from python_interface.utils.constants import Backend, Topology
+from python_interface.utils.utils import check_and_create_path, check_var_in_literal, get_logger, check_positive_int
 
 
 class Configuration(dict):
@@ -44,7 +45,7 @@ class Configuration(dict):
         :type epochs: int
         """
         super().__init__()
-        self.logger: logging.Logger = utils.get_logger(self.__class__.__name__)
+        self.logger: logging.Logger = get_logger(self.__class__.__name__)
 
         self.logger.info("Generating JSON configuration file...")
         self.json: JSONGenerator = JSONGenerator(topology=topology, endpoints=endpoints, commands=commands)
@@ -144,7 +145,7 @@ class Configuration(dict):
         :param json_path: JSON configuration file path.
         :type json_path: PathLike
         """
-        utils.check_and_create_path(json_path, "json_path", self.logger)
+        check_and_create_path(json_path, "json_path", self.logger)
         self.logger.info("Setting the JSON config file path to %s", json_path)
         self["json_path"]: PathLike = json_path
 
@@ -154,11 +155,12 @@ class Configuration(dict):
         :param runner_path: DFF_run path.
         :type runner_path: PathLike
         """
-        utils.check_and_create_path(runner_path, "runner_path", self.logger)
+        check_and_create_path(runner_path, "runner_path", self.logger)
         self.logger.info("Setting the DFF_run path to %s", runner_path)
         self["runner_path"]: PathLike = runner_path
 
-    def set_executable_path(self, executable_path: Optional[PathLike] = None, topology: Optional[Topology] = None):
+    def set_executable_path(self, executable_path: Optional[PathLike] = None,
+                            topology: Optional[Topology] = None) -> NoReturn | ValueError:
         """Set the FastFlow executable path.
 
         :param executable_path: FastFlow executable path.
@@ -167,18 +169,20 @@ class Configuration(dict):
         :type topology: Optional[Topology]
         :raises: ValueError
         """
-        # utils.check_mutually_exclusive_args(executable_path, topology, self.logger)
+        try:
+            check_var_in_literal(topology, Topology, self.logger)
+        except ValueError as e:
+            self.logger.critical("Specified topology is not supported: %s", e)
+            raise e
+        self.logger.info("Setting the FastFlow topology to %s", topology)
         self["topology"]: Topology = topology
+
         if executable_path is not None:
-            utils.check_and_create_path(executable_path, "executable_path", self.logger)
+            check_and_create_path(executable_path, "executable_path", self.logger)
             self.logger.info("Setting the FastFlow executable path to %s", executable_path)
             self["executable_path"]: PathLike = executable_path
-            self["topology"]: Topology = constants.CUSTOM
         else:
-            utils.check_var_in_literal(topology, Topology, self.logger)
-            self.logger.info("Setting the FastFlow topology to %s", topology)
-            self["executable_path"]: PathLike = None
-            match topology:
+            match self["topology"]:
                 case constants.MASTER_WORKER:
                     self["executable_path"] = constants.EXECUTABLE_PATH_MS
                 case constants.PEER_TO_PEER:
@@ -188,7 +192,9 @@ class Configuration(dict):
                 case constants.MVDET:
                     self["executable_path"] = constants.EXECUTABLE_PATH_MVDET
                 case _:
-                    raise ValueError("Value " + str(topology) + " is not in the admitted topologies: " + str(Topology))
+                    self.logger.critical("Specified topology is not supported: %s", self["topology"])
+                    raise ValueError(
+                        "Value " + str(self["topology"]) + " is not in the admitted topologies: " + str(Topology))
 
     def set_backend(self, backend: Backend):
         """Set the communication backend.
@@ -196,7 +202,11 @@ class Configuration(dict):
         :param backend: communication backend.
         :type backend: Backend
         """
-        utils.check_var_in_literal(backend, Backend, self.logger)
+        try:
+            check_var_in_literal(backend, Backend, self.logger)
+        except ValueError as e:
+            self.logger.critical("Specified topology is not supported: %s", e)
+            raise e
         self.logger.info("Setting the communication backend to %s", backend)
         self["backend"]: Backend = backend
 
@@ -209,23 +219,31 @@ class Configuration(dict):
         self.logger.info("Forcing the workload on the CPU: %s", force_cpu)
         self["force_cpu"]: bool = 1 if force_cpu else 0
 
-    def set_rounds(self, rounds: int):
+    def set_rounds(self, rounds: int) -> NoReturn | ValueError:
         """Set number of federated rounds to be run.
 
         :param rounds: number of federated rounds to be run.
         :type rounds: int
         """
-        utils.check_positive_int(rounds, 0, self.logger)
+        try:
+            check_positive_int(rounds, 0, self.logger)
+        except ValueError as e:
+            self.logger.critical("The specified number of rounds is not supported: %s", e)
+            raise e
         self.logger.info("Setting the number of federated rounds to %s", rounds)
         self["rounds"]: int = rounds
 
-    def set_epochs(self, epochs: int):
+    def set_epochs(self, epochs: int) -> NoReturn | ValueError:
         """Set number of epochs to be run.
 
         :param epochs: number of epochs to be run.
         :type epochs: int
         """
-        utils.check_positive_int(epochs, 0, self.logger)
+        try:
+            check_positive_int(epochs, 0, self.logger)
+        except ValueError as e:
+            self.logger.critical("The specified number of epochs is not supported: %s", e)
+            raise e
         self.logger.info("Setting the number of epochs to %s", epochs)
         self["epochs"]: int = epochs
 
@@ -235,6 +253,6 @@ class Configuration(dict):
         :param torchscript_path: TorchScript model path.
         :type torchscript_path: PathLike
         """
-        utils.check_and_create_path(torchscript_path, "torchscript_path", self.logger)
+        check_and_create_path(torchscript_path, "torchscript_path", self.logger)
         self.logger.info("Setting the TorchScript model path to %s", torchscript_path)
         self["torchscript_path"]: PathLike = torchscript_path

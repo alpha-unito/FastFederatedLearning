@@ -2,8 +2,8 @@
 Class responsible for organizing, running, and eventually shutting down, the federation.
 """
 import logging
-from subprocess import call
-from typing import List
+from subprocess import call, SubprocessError
+from typing import List, NoReturn
 
 import torch
 from pssh.clients.ssh.parallel import ParallelSSHClient
@@ -15,7 +15,6 @@ from python_interface.dataset import Dataset
 from python_interface.json_generator import JSONGenerator
 from python_interface.model import Model
 from python_interface.utils import utils, constants
-from python_interface.utils.constants import Topology
 
 
 class Experiment:
@@ -30,6 +29,7 @@ class Experiment:
         :type model: ScriptModule
         """
         self.logger: logging.Logger = utils.get_logger(self.__class__.__name__)
+
         self.configuration: Configuration = configuration
         self.json: JSONGenerator = self.configuration.get_json()
         self.model: Model = model
@@ -37,28 +37,35 @@ class Experiment:
 
         self.logger.info("Experiment set up correctly.")
 
-    def run_experiment(self):
+    def run_experiment(self) -> NoReturn | WronglySpecifiedArgumentException | SubprocessError:
         """Experiment start-up.
-        Saves the TorchScript model and the JSON configuration file, and then calls the C/C++ backend executable.
+        Saves the TorchScript model and the JSON configuration file, if it not already saved, and then calls the C/C++ backend executable.
         """
         try:
             self.model.check_torchscript_no_model(self.configuration.get_torchscript_path())
         except WronglySpecifiedArgumentException as e:
-            self.logger.critical(e.message)
+            self.logger.critical("The specified model configuration is not correct: %s", e)
+            raise e
         if not self.model.already_exists():
             self.logger.info("Saving TorchScript model to: %s", self.configuration.get_torchscript_path())
             torch.jit.save(self.model.compile(), self.configuration.get_torchscript_path())
+
         self.json.generate_json_file(self.configuration.get_json_path())
 
-        dff_run_command: List[str] = self.create_dff_run_command(self.configuration.get_topology())
-
+        dff_run_command: List[str] = self.create_dff_run_command()
         self.logger.info("Launching the FastFlow backend: %s", dff_run_command)
         self.logger.info('-' * 80)
-        call(dff_run_command)
+        try:
+            call(dff_run_command)
+        except SubprocessError as e:
+            self.logger.critical("Call to FastFlow backend failed: %s", e)
+            self.logger.info('-' * 80)
+            self.logger.info("Experiment not completed correctly.")
+            raise e
         self.logger.info('-' * 80)
         self.logger.info("Experiment completed correctly.")
 
-    def create_dff_run_command(self, topology: Topology) -> List[str]:
+    def create_dff_run_command(self) -> List[str]:
         """Method to create the command-line string for executing the experiment through DFF_run.
 
         :param topology: the chosen experiment topology.
@@ -75,9 +82,9 @@ class Experiment:
                                       self.configuration.get_json_path(),
                                       self.configuration.get_executable_path()]
 
-        match topology:
+        self.logger.info("Adding the %s command line parameters...", self.configuration.get_topology())
+        match self.configuration.get_topology():
             case constants.MASTER_WORKER | constants.PEER_TO_PEER | constants.CUSTOM:
-                self.logger.info("Adding the %s command line parameters...", topology)
                 dff_run_command.extend([str(int(self.configuration.get_force_cpu())),
                                         str(self.configuration.get_rounds()),
                                         str(self.configuration.get_epochs()),
@@ -85,21 +92,16 @@ class Experiment:
                                         str(self.json.get_clients_number()),
                                         self.configuration.get_torchscript_path()])
             case constants.EDGE_INFERENCE:
-                self.logger.info("Adding the %s command line parameters...", topology)
                 dff_run_command.extend([str(int(self.configuration.get_force_cpu())),
                                         self.dataset.get_data_path(),
                                         str(self.json.get_clients_number()),
                                         "1",  # TODO: Add support for multiple groups
                                         self.configuration.get_torchscript_path()])
             case constants.MVDET:
-                self.logger.info("Adding the %s command line parameters...", topology)
                 dff_run_command.extend([str(int(self.configuration.get_force_cpu())),
                                         self.dataset.get_data_path(),
                                         str(self.json.get_clients_number()),
                                         "1"])  # TODO: Add support for multiple groups
-            case _:
-                self.logger.warning("The specified topology (%s) does not match any of the supported ones.", topology)
-
         return dff_run_command
 
     def kill(self) -> List[int]:
@@ -119,8 +121,6 @@ class Experiment:
                 self.logger.info("Message received from host %s: %s", host_out, line)
             exit_codes.append(host_out.exit_code)
         self.logger.debug("Exit codes received from the hosts: %s", dict(zip(self.json.get_hosts(), exit_codes)))
-        # TODO: check the exit codes
-        return exit_codes
+        self.logger.info("Killing FastFederatedLearning process done.")
 
-    def stream_metrics(self):
-        pass
+        return exit_codes

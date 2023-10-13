@@ -20,6 +20,15 @@ class BuildingBlock(ABC):
         """
         self.logger: logging.Logger = get_logger(class_name)
 
+    def __str__(self) -> str:
+        """
+        Get the caller's class name
+
+        :return: name of the calling class.
+        :rtype: str
+        """
+        return self.__class__.__name__
+
     @abstractmethod
     def compile(self, building_blocks: List[Self], source_file: TextIO):
         """
@@ -31,12 +40,3 @@ class BuildingBlock(ABC):
         :type source_file: TextIOWrapper
         """
         pass
-
-    def __str__(self) -> str:
-        """
-        Get the caller's class name
-
-        :return: name of the calling class.
-        :rtype: str
-        """
-        return self.__class__.__name__
