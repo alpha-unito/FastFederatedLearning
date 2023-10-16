@@ -1,2 +1,0 @@
-class MutuallyExclusiveArgumentsException(Exception):
-    pass

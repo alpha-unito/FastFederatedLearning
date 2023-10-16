@@ -1,0 +1,19 @@
+{
+   "groups" : [
+      {   
+         "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
+         "endpoint" : "localhost:8000",
+         "name": "W0"
+      },
+      {   
+         "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
+         "endpoint" : "localhost:8001",
+         "name": "W1"
+      },
+      {   
+         "preCmd" : "MKL_NUM_THREADS=4 OMP_NUM_THREADS=4 taskset -c 0-3",
+         "endpoint" : "localhost:8002",
+         "name": "W2"
+      }
+   ]
+}

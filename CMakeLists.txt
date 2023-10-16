@@ -28,9 +28,7 @@ include_directories(${CEREAL_DIR})
 find_package(Torch REQUIRED)
 find_package(OpenCV REQUIRED core highgui videoio) # TODO if not found OpenCV then exclude edgeinference
 
-
 find_package(MPI)
-
 if (NOT MPI_FOUND)
     message("DFF excluding MPI")
     add_compile_definitions(DFF_EXCLUDE_MPI)
@@ -41,7 +39,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS} -pthread")
 add_compile_definitions(NO_DEFAULT_MAPPING)
 
 #add_definitions(-DPRINT_IR)
-add_compile_options(-O3)
+add_compile_options(
+    "$<$<CONFIG:RELEASE>:-O3>"
+    "$<$<CONFIG:DEBUG>:-g>"
+)
 
 # The example folder contains the actual examples' code
-add_subdirectory(examples)
+add_subdirectory(C/examples)

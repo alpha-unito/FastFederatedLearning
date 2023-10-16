@@ -1,0 +1,44 @@
+{
+   "groups" : [
+      {   
+         "endpoint" : "medium-01:8000",
+         "name" : "C1"
+      },
+      {   
+         "endpoint" : "medium-02:8001",
+         "name" : "C2"
+      },
+      {   
+         "endpoint" : "medium-03:8002",
+         "name" : "C3"
+      },
+      {   
+         "endpoint" : "medium-04:8003",
+         "name" : "C4"
+      },
+      {   
+         "endpoint" : "medium-05:8004",
+         "name" : "C5"
+      },
+      {   
+         "endpoint" : "medium-06:8005",
+         "name" : "C6"
+      },
+      {   
+         "endpoint" : "medium-07:8006",
+         "name" : "C7"
+      },
+      {   
+         "endpoint" : "medium-08:8007",
+         "name" : "A1"
+      },
+      {   
+         "endpoint" : "medium-09:8008",
+         "name" : "S0"
+      },
+      {   
+         "endpoint" : "medium-10:8009",
+         "name" : "S8"
+      }
+   ]
+}
