@@ -4,9 +4,8 @@ Class responsible for Parallel structures
 from typing import List, Final, TextIO
 
 from .building_block import BuildingBlock
-from .wrapper import Wrapper
 
-init_code: Final[str] = """
+init_code_ms: Final[str] = """
     if (groupName.compare(loggerName) == 0)
         std::cout << "Worker creation..." << std::endl;
     ff_a2a a2a;
@@ -16,25 +15,29 @@ init_code: Final[str] = """
         auto optimizer = std::make_shared<torch::optim::Adam>(net->parameters(), torch::optim::AdamOptions(0.001));
 """
 
-end_code: Final[str] = """
+end_code_ms: Final[str] = """
     }
     a2a.add_secondset(w);"""
 
-worker_creation: Final[str] = """
-        ff_node *worker = new ff_comb(new MiNodeAdapter<StateDict>,
-                                      new Worker(i, net, net->state_dict(), train_epochs, optimizer,
-                                                 torch::data::make_data_loader(train_dataset,
-                                                                               torch::data::samplers::DistributedRandomSampler(
-                                                                                       train_dataset.size().value(),
-                                                                                       num_workers,
-                                                                                       i % num_workers,
-                                                                                       true),
-                                                                               train_batchsize),
-                                                 torch::data::make_data_loader(test_dataset, test_batchsize),
-                                                 device));
-        w.push_back(worker);
-        a2a.createGroup("W" + std::to_string(i)) << worker;
-    """
+init_code_p2p: Final[str] = """
+    if (groupName.compare(loggerName) == 0)
+        std::cout << "Peers creation..." << std::endl;
+    ff::ff_a2a a2a;
+    std::vector < ff::ff_node * > left;
+    std::vector < ff::ff_node * > right;
+    for (int i = 0; i < num_workers; ++i) {
+        Net <torch::jit::Module> *local_net = new Net<torch::jit::Module>(inmodel);
+        auto optimizer = std::make_shared<torch::optim::Adam>(local_net->parameters(),
+                                                              torch::optim::AdamOptions(0.001));
+                                                              
+    Net <torch::jit::Module> *fed_net = new Net<torch::jit::Module>(inmodel);
+    FedAvg <StateDict> aggregator(*fed_net->state_dict());
+"""
+
+end_code_p2p: Final[str] = """
+    }
+    a2a.add_firstset(left);
+    a2a.add_secondset(right);"""
 
 
 class Parallel(BuildingBlock):
@@ -61,17 +64,20 @@ class Parallel(BuildingBlock):
         :param source_file: C/C++ source file to write on.
         :type source_file: TextIO
         """
-        source_file.write(init_code)
+        if building_blocks:
+            source_file.write(init_code_ms)
+        else:
+            source_file.write(init_code_p2p)
         if self.tasks:
             first_bb: BuildingBlock
             remaining_bb: List[BuildingBlock]
             first_bb, *remaining_bb = self.tasks
             self.logger.debug("Analysing the %s task...", first_bb)
             first_bb.compile(remaining_bb, source_file)
-        if all(isinstance(task, Wrapper) for task in self.tasks):
-            if all(task.get_label() in ["Train", "Test"] for task in self.tasks):
-                source_file.write(worker_creation)
-        source_file.write(end_code)
+        if building_blocks:
+            source_file.write(end_code_ms)
+        else:
+            source_file.write(end_code_p2p)
         if building_blocks:
             first_bb: BuildingBlock
             remaining_bb: List[BuildingBlock]

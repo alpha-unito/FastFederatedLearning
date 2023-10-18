@@ -28,7 +28,7 @@
 using namespace ff;
 
 template<typename T>
-struct MiNodeAdapter : ff::ff_minode_t<T> {
+struct MiNodeAdapter : ff_minode_t<T> {
     T *svc(T *in) { return in; }
 };
 
@@ -67,7 +67,8 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[1], "-h") == 0) {
             if (groupName.compare(loggerName) == 0)
                 std::cout
-                        << "Usage: p2p [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path] [num_workers] [model_path]\n";
+                        << "Usage: p2p [forcecpu=0/1] [rounds=10] [epochs/round=2] [data_path] [num_workers] [model_path]"
+                        << std::endl;
             exit(0);
         } else
             forcecpu = atoi(argv[1]);

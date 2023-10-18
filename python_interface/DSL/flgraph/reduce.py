@@ -4,7 +4,7 @@ Class responsible for Reduce structures
 
 from typing import List, TextIO, Final
 
-from .broadcast import Broadcast
+import python_interface.DSL.flgraph as flgraph
 from .building_block import BuildingBlock
 
 add_aggregator: Final[str] = """if (groupName.compare(loggerName) == 0)
@@ -39,12 +39,12 @@ class Reduce(BuildingBlock):
         :param source_file: C/C++ source file to write on.
         :type source_file: TextIO
         """
-        if isinstance(building_blocks[0], Broadcast):
-            source_file.write(add_aggregator)
-            building_blocks.pop()
         if building_blocks:
             first_bb: BuildingBlock
             remaining_bb: List[BuildingBlock]
             first_bb, *remaining_bb = building_blocks
+            if isinstance(first_bb, flgraph.Broadcast):
+                source_file.write(add_aggregator)
+                building_blocks.pop()
             self.logger.debug("Analysing the %s building block...", first_bb)
             first_bb.compile(remaining_bb, source_file)
