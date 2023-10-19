@@ -8,7 +8,6 @@ from python_interface.configuration import Configuration
 from python_interface.dataset import Dataset
 from python_interface.experiment import Experiment
 from python_interface.model import Model
-from python_interface.utils.constants import PEER_TO_PEER
 
 FFL_DIR = "/mnt/shared/gmittone/FastFederatedLearning/"
 DATA_PATH = FFL_DIR + "data/"
@@ -47,8 +46,7 @@ ff_executable = FLGraph([
     ])
 ]).compile()
 
-config = Configuration(endpoints=nodes, executable_path=ff_executable,
-                       topology=PEER_TO_PEER)  # TODO: eliminare il PEER_TO_PEER
+config = Configuration(endpoints=nodes, executable_path=ff_executable)
 model = Model(model=Net(), example=torch.rand(128, 1, 28, 28), optimize=False)
 dataset = Dataset(DATA_PATH)  # TODO: add dataset support
 experiment = Experiment(config, model=model, dataset=dataset)

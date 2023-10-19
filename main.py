@@ -49,5 +49,5 @@ model = Model(model=Net(), example=torch.rand(128, 1, 28, 28), optimize=False)
 dataset = Dataset(DATA_PATH)
 experiment = Experiment(config, model=model, dataset=dataset)
 
-# experiment.kill()
-experiment.run_experiment()
+experiment.kill()
+# experiment.run_experiment()

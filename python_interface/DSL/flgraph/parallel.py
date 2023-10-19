@@ -10,6 +10,7 @@ init_code_ms: Final[str] = """
         std::cout << "Worker creation..." << std::endl;
     ff_a2a a2a;
     std::vector < ff_node * > w;
+    num_workers--;
     for (int i = 1; i <= num_workers; ++i) {
         Net <torch::jit::Module> *net = new Net<torch::jit::Module>(inmodel);
         auto optimizer = std::make_shared<torch::optim::Adam>(net->parameters(), torch::optim::AdamOptions(0.001));

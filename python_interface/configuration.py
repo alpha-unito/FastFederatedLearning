@@ -16,7 +16,7 @@ class Configuration(dict):
                  json_path: Optional[PathLike] = constants.DEFAULT_JSON_PATH,
                  torchscript_path: Optional[PathLike] = constants.DEFAULT_MODEL_PATH,
                  executable_path: Optional[PathLike] = None,
-                 topology: Topology = constants.MASTER_WORKER,
+                 topology: Topology = constants.CUSTOM,
                  endpoints: Union[int, List[str], List[Dict[str, str]]] = 2,
                  commands: Optional[Union[str, List[str]]] = None, backend: Backend = constants.TCP,
                  force_cpu: bool = True, rounds: int = 1, epochs: int = 1):

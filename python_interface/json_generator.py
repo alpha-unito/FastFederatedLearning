@@ -97,9 +97,9 @@ class JSONGenerator(dict):
         """
         clients: Optional[int] = None
         match self["topology"]:
-            case constants.MASTER_WORKER | constants.EDGE_INFERENCE | constants.CUSTOM:
+            case constants.MASTER_WORKER | constants.EDGE_INFERENCE:
                 clients = len(self[constants.GROUPS]) - 1
-            case constants.PEER_TO_PEER:
+            case constants.PEER_TO_PEER | constants.CUSTOM:
                 clients = len(self[constants.GROUPS])
             case constants.MVDET:
                 clients = len(self[constants.GROUPS]) - 3
