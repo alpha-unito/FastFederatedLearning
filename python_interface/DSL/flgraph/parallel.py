@@ -44,7 +44,7 @@ end_code_p2p: Final[str] = """
 class Parallel(BuildingBlock):
     """ Class responsible for Parallel structures """
 
-    def __init__(self, tasks: List[BuildingBlock], replicas: int = 1):
+    def __init__(self, tasks: List[BuildingBlock]):
         """ Initialisation of the Parallel Building Block.
 
         :param tasks: nested Building Blocks to analyse.
@@ -55,7 +55,6 @@ class Parallel(BuildingBlock):
         super().__init__(self.__str__())
 
         self.tasks: List[BuildingBlock] = tasks
-        self.replicas: int = replicas
 
     def compile(self, building_blocks: List[BuildingBlock], source_file: TextIO):
         """ Compilation of the Parallel Building Block
@@ -65,23 +64,27 @@ class Parallel(BuildingBlock):
         :param source_file: C/C++ source file to write on.
         :type source_file: TextIO
         """
-        if building_blocks:
-            source_file.write(init_code_ms)
+        if len(self.tasks) == 1 and str(self.tasks[0]) == "Initialisation":
+            self.logger.debug("Analysing the %s task...", self.tasks[0])
+            self.tasks[0].compile(building_blocks, source_file)
         else:
-            source_file.write(init_code_p2p)
-        if self.tasks:
-            first_bb: BuildingBlock
-            remaining_bb: List[BuildingBlock]
-            first_bb, *remaining_bb = self.tasks
-            self.logger.debug("Analysing the %s task...", first_bb)
-            first_bb.compile(remaining_bb, source_file)
-        if building_blocks:
-            source_file.write(end_code_ms)
-        else:
-            source_file.write(end_code_p2p)
-        if building_blocks:
-            first_bb: BuildingBlock
-            remaining_bb: List[BuildingBlock]
-            first_bb, *remaining_bb = building_blocks
-            self.logger.debug("Analysing the %s building block...", first_bb)
-            first_bb.compile(remaining_bb, source_file)
+            if building_blocks:
+                source_file.write(init_code_ms)
+            else:
+                source_file.write(init_code_p2p)
+            if self.tasks:
+                first_bb: BuildingBlock
+                remaining_bb: List[BuildingBlock]
+                first_bb, *remaining_bb = self.tasks
+                self.logger.debug("Analysing the %s task...", first_bb)
+                first_bb.compile(remaining_bb, source_file)
+            if building_blocks:
+                source_file.write(end_code_ms)
+            else:
+                source_file.write(end_code_p2p)
+            if building_blocks:
+                first_bb: BuildingBlock
+                remaining_bb: List[BuildingBlock]
+                first_bb, *remaining_bb = building_blocks
+                self.logger.debug("Analysing the %s building block...", first_bb)
+                first_bb.compile(remaining_bb, source_file)

@@ -35,7 +35,7 @@ class Net(nn.Module):
 
 
 ff_executable = FLGraph([
-    Initialisation(),  # TODO: add command line parameters here
+    Wrapper("Initialisation"),  # TODO: add command line parameters here
     Feedback([
         Parallel([
             Wrapper("Train"),
