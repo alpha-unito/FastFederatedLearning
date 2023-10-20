@@ -3,7 +3,7 @@ Class responsible for organizing, running, and eventually shutting down, the fed
 """
 import logging
 from subprocess import call, SubprocessError
-from typing import List, NoReturn
+from typing import List, NoReturn, Optional
 
 import torch
 from pssh.clients.ssh.parallel import ParallelSSHClient
@@ -20,7 +20,7 @@ from python_interface.utils import utils, constants
 class Experiment:
     """Object handling the experiment"""
 
-    def __init__(self, configuration: Configuration, model: Model, dataset: Dataset):
+    def __init__(self, configuration: Configuration, dataset: Dataset, model: Optional[Model] = None):
         """Object serving as interface for handling the Federated Learning experiment.
 
         :param configuration: a federation configuration file.
@@ -32,7 +32,7 @@ class Experiment:
 
         self.configuration: Configuration = configuration
         self.json: JSONGenerator = self.configuration.get_json()
-        self.model: Model = model
+        self.model: Optional[Model] = model if model is not None else Model()
         self.dataset: Dataset = dataset
 
         self.logger.info("Experiment set up correctly.")

@@ -43,7 +43,7 @@ ff_executable = FLGraph([
             Wrapper("Train"),
             Wrapper("Test"),
             Broadcast(),
-            Reduce(),
+            Reduce("FedAvg"),
         ]),
     ])
 ]).compile()

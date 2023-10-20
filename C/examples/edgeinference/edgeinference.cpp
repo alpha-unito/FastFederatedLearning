@@ -32,7 +32,6 @@
  *
  */
 
-
 #include <iostream>
 
 #include <ff/dff.hpp>
@@ -45,8 +44,8 @@
 
 using namespace ff;
 
-template<typename T>
-void serializefreetask(T *o, Frame *input) {}
+//template<typename T>
+//void serializefreetask(T *o, Frame *input) {}
 
 int main(int argc, char *argv[]) {
     timer chrono = timer("Total execution time");
@@ -116,7 +115,6 @@ int main(int argc, char *argv[]) {
     if (groupName.compare(loggerName) == 0)
         std::cout << "Cameras creation..." << std::endl;
     ff_a2a a2a;
-    level0Gatherer <edgeMsg_t> root;
     std::vector < ff_node * > globalLeft;
     for (int i = 1; i <= num_workers; ++i) {
         ff_pipeline *pipe = new ff_pipeline;   // <---- To be removed and automatically added
@@ -137,6 +135,7 @@ int main(int argc, char *argv[]) {
         g << pipe;
     }
     a2a.add_firstset(globalLeft, true);
+    level0Gatherer <edgeMsg_t> root;
     a2a.add_secondset<ff_node>({&root});
     a2a.createGroup("W0") << root;
 

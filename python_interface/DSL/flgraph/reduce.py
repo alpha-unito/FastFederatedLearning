@@ -7,7 +7,8 @@ from typing import List, TextIO, Final
 import python_interface.DSL.flgraph as flgraph
 from .building_block import BuildingBlock
 
-add_aggregator: Final[str] = """if (groupName.compare(loggerName) == 0)
+add_aggregator: Final[str] = """
+    if (groupName.compare(loggerName) == 0)
         std::cout << "Aggreator creation..." << std::endl;
     Net <torch::jit::Module> *net = new Net<torch::jit::Module>(inmodel);
     FedAvg <StateDict> aggregator(*net->state_dict());
@@ -27,9 +28,17 @@ class Reduce(BuildingBlock):
         :param strategy: type of strategy to use for the reduce operation.
         :type strategy: str
         """
-        super().__init__(self.__str__())
+        super().__init__(self.__class__.__name__)
 
         self.strategy: str = strategy
+
+    def get_label(self) -> str:
+        """ Getter for the Wrapper Building Block label.
+
+        :return: wrapper's label
+        :rtype: str
+        """
+        return self.strategy
 
     def compile(self, building_blocks: List[BuildingBlock], source_file: TextIO):
         """ Compilation of the Reduce Building Block.
@@ -48,3 +57,12 @@ class Reduce(BuildingBlock):
                 building_blocks.pop()
             self.logger.debug("Analysing the %s building block...", first_bb)
             first_bb.compile(remaining_bb, source_file)
+
+    def __str__(self) -> str:
+        """
+        Get the caller's class name
+
+        :return: name of the calling class.
+        :rtype: str
+        """
+        return self.get_label()

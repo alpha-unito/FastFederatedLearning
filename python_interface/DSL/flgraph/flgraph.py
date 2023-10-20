@@ -26,7 +26,7 @@ class FLGraph:
 
         self.tasks: List[BuildingBlock] = tasks
 
-    def compile(self, workspace: PathLike = DEFAULT_WORKSPACE_DIR) -> PathLike:
+    def compile(self, workspace: PathLike = DEFAULT_WORKSPACE_DIR, opencv_required: bool = False) -> PathLike:
         """
         Translation of the provided structure into a concrete C/C++ source file implementing the specified structure.
         The source file is then compiled and linked.
@@ -62,6 +62,8 @@ class FLGraph:
                     "-I" + DEFAULT_FFL_DIR,
                     "-isystem", DEFAULT_LIBS_DIR + "torch/include",
                     "-isystem", DEFAULT_LIBS_DIR + "torch/include/torch/csrc/api/include",
+                    "-isystem" if opencv_required else "",
+                    "/usr/include/opencv4" if opencv_required else "",  # TODO: this path is static
                     "-D_GLIBCXX_USE_CXX11_ABI=1",
                     "-pthread",
                     "-D_GLIBCXX_USE_CXX11_ABI=1",
@@ -72,6 +74,33 @@ class FLGraph:
                     "-c", workspace + "source.cpp"], stdout=PIPE, stderr=STDOUT) as process:
             for line in process.stdout:
                 self.logger.critical(line.decode('utf8'))
+        if opencv_required:
+            with Popen(["/usr/bin/c++",
+                        "-DNO_DEFAULT_MAPPING",
+                        "-DUSE_C10D_GLOO",
+                        "-DUSE_DISTRIBUTED",
+                        "-DUSE_RPC",
+                        "-DUSE_TENSORPIPE",
+                        "-I" + DEFAULT_LIBS_DIR + "fastflow",
+                        "-I" + DEFAULT_LIBS_DIR + "cereal/include",
+                        "-I" + DEFAULT_FFL_DIR + "..",
+                        "-I" + DEFAULT_FFL_DIR,
+                        "-isystem", DEFAULT_LIBS_DIR + "torch/include",
+                        "-isystem", DEFAULT_LIBS_DIR + "torch/include/torch/csrc/api/include",
+                        "-isystem", "/usr/include/opencv4",  # TODO: this path is static
+                        "-D_GLIBCXX_USE_CXX11_ABI=1",
+                        "-pthread",
+                        "-D_GLIBCXX_USE_CXX11_ABI=1",
+                        "-MD",
+                        "-MT",
+                        DEFAULT_FFL_DIR + "C/utils/process-frame.cpp.o",
+                        "-MF",
+                        DEFAULT_FFL_DIR + "C/utils/process-frame.cpp.o.d",
+                        "-o", workspace + "process-frame.cpp.o",
+                        "-c", DEFAULT_FFL_DIR + "C/utils/process-frame.cpp"], stdout=PIPE,
+                       stderr=STDOUT) as process:
+                for line in process.stdout:
+                    self.logger.critical(line.decode('utf8'))
 
         self.logger.info("Compilation completed successfully. Starting linking...")
         with Popen(["/usr/bin/c++",
@@ -82,16 +111,22 @@ class FLGraph:
                     "-Wl,/usr/local/lib",
                     "-Wl,--enable-new-dtags",
                     workspace + "source.cpp.o",
+                    workspace + "process-frame.cpp.o",
                     "-o", workspace + "source",
                     "-Wl,-rpath," + DEFAULT_LIBS_DIR + "torch/lib:/usr/local/lib",
                     DEFAULT_LIBS_DIR + "torch/lib/libtorch.so",
                     DEFAULT_LIBS_DIR + "torch/lib/libc10.so",
                     DEFAULT_LIBS_DIR + "torch/lib/libkineto.a",
+                    "/usr/lib/x86_64-linux-gnu/libopencv_highgui.so.4.5.4d" if opencv_required else "",
+                    "/usr/lib/x86_64-linux-gnu/libopencv_videoio.so.4.5.4d" if opencv_required else "",
                     "-Wl,--no-as-needed," + DEFAULT_LIBS_DIR + "torch/lib/libtorch_cpu.so",
-                    "-Wl,--as-needed",
-                    DEFAULT_LIBS_DIR + "torch/lib/libc10.so",
+                    "-Wl,--as-needed", DEFAULT_LIBS_DIR + "torch/lib/libc10.so",
                     "-Wl,--no-as-needed," + DEFAULT_LIBS_DIR + "torch/lib/libtorch.so",
                     "-Wl,--as-needed",
+                    "-Wl,--as-needed",
+                    "/usr/lib/x86_64-linux-gnu/libopencv_imgcodecs.so.4.5.4d" if opencv_required else "",
+                    "/usr/lib/x86_64-linux-gnu/libopencv_imgproc.so.4.5.4d" if opencv_required else "",
+                    "/usr/lib/x86_64-linux-gnu/libopencv_core.so.4.5.4d" if opencv_required else "",
                     "/usr/local/lib/libmpi.so"], stdout=PIPE, stderr=STDOUT) as process:
             for line in process.stdout:
                 self.logger.critical(line.decode('utf8'))

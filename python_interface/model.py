@@ -36,7 +36,8 @@ class Model:
         self.example: Optional[torch.Tensor] = example
         self.optimize: bool = optimize
 
-        self.is_torchscript: bool = isinstance(self.model, ScriptModule)
+        # If the model is not provided, we suppose that a TorchScript file is available
+        self.is_torchscript: bool = isinstance(self.model, ScriptModule) or model is None
         self.exists: bool = False
 
         try:
