@@ -55,7 +55,7 @@ public: // TODO: add clone method/constructor
         }
     }
 
-    ~Net() = delete;
+    // ~Net() = delete;
 
     torch::Tensor forward(torch::Tensor x) {
         return module.forward({x}).toTensor();
@@ -100,6 +100,10 @@ public: // TODO: add clone method/constructor
 
     void save(std::ostream &out) const {
         module.save(out);
+    }
+
+    void to(c10::Device device, bool non_blocking = false) {
+        module.to(device, non_blocking);
     }
 };
 
